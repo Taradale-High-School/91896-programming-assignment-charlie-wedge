@@ -129,8 +129,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
             for (int y = 0; y < chunkSize; y++)
             {
                 int xCord = x + (chunkX * chunkSize);
-                int yCord = y + (chunkY * chunkSize);
-                Instantiate(cubePrefab, new Vector3(xCord, Mathf.RoundToInt(SampleStepped(xCord, yCord) * worldHeightScale), yCord), cubePrefab.transform.rotation).transform.parent = chunkEmptyObject;
+                int zCord = y + (chunkY * chunkSize);
+                int yCord = Mathf.RoundToInt(SampleStepped(xCord, yCord) * worldHeightScale);
+                Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = chunkEmptyObject;
+                SpawnBlocksUnder(xCord, yCord, zCord);
             }
         }
     }
@@ -153,5 +155,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         //return sampleFloat;
         return sample;
 
+    }
+    // Spawn blocks from bedrock to the surface
+    private void SpawnBlocksUnder(int xCord, int maxY, int zCord)
+    {
+        for (int i = 0; i < maxY; i++)
+        {
+            
+        }
     }
 }
