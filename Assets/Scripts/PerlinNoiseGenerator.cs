@@ -18,6 +18,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public int playerChunkPosX;
     public int playerChunkPosZ;
 
+    public int heightLimit;
 
     public int chunkSize;
     public int renderDistance;
@@ -28,17 +29,42 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private Texture2D perlinNoiseTexture;
 
+    private int[] chunkData;
+    private int[] availableChunkNames;
+    private int chunkNameCounter = 0;
+
+   // private arr[][][] chunkData;
 
     public Transform worldParent;
     public Transform chunkParent;
+
+    private void Start()
+    {
+
+        
+
+        chunkData = new int[(chunkSize * chunkSize * heightLimit)+1]; // Set's the size of the array
+        print(chunkData.Length);
+
+    }
+
 
     // Update is called once per frame
     void Update()
     {
         //GenerateNoise();
 
+        chunkNameCounter = 0;
         DeleteWorld();
         GenerateWorld();
+
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            int randomIndex = Random.Range(0, chunkData.Length);
+            print("Index " + randomIndex + " = " + chunkData[randomIndex]);
+
+        }
         
     }
 
@@ -53,7 +79,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             for (int i = -(r-1); i < r+1; i++) // Basiclly spawns every chunk in the 'outline'
             {
-              
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
                 if (r==i && r>0)
                 {
@@ -67,11 +92,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 GenerateChunk(r, i);
                 GenerateChunk(-r, i);
                 GenerateChunk(i, -r);
-            }
-            
-        } 
-
-
+            } 
+        }
     }
 
     private void DeleteWorld()
@@ -122,6 +144,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         // Instantiate the empty chunk object in which this chunk's cubes will be placed in
         Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation);
+        chunkEmptyObject.name = chunkNameCounter.ToString();
+
+        chunkNameCounter++;
+
         chunkEmptyObject.parent = worldParent;
 
         for (int x = 0; x < chunkSize; x++)
@@ -132,9 +158,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int zCord = y + (chunkY * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
                 SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
-                SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
+                //SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
             }
         }
+
     }
 
     private float SampleStepped(int x, int y)
@@ -168,5 +195,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void SpawnBlock(int x, int y, int z, Transform chunk)
     {
         Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
+        WriteToChunkData(x, y, z);
+    }
+
+    private void WriteToChunkData(int x, int y, int z)
+    {
+        x++;
+        z++;
+        chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = 1;
     }
 }
