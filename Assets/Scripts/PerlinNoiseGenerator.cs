@@ -29,6 +29,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private Texture2D perlinNoiseTexture;
 
+    public List<Vector3> chunkVertices;
     private int[] chunkData;
     private int[] availableChunkNames;
     private int chunkNameCounter = 0;
@@ -41,10 +42,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void Start()
     {
 
-        
 
-        chunkData = new int[(chunkSize * chunkSize * heightLimit)+1]; // Set's the size of the array
-        print(chunkData.Length);
+
+
+      // chunkData = new int[(chunkSize * chunkSize * heightLimit)+1]; // Set's the size of the array
+        //print(chunkData.Length);
 
     }
 
@@ -54,6 +56,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         //GenerateNoise();
 
+        chunkVertices.Clear();
         chunkNameCounter = 0;
         DeleteWorld();
         GenerateWorld();
@@ -196,12 +199,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
         WriteToChunkData(x, y, z);
+        chunkVertices.Add(new Vector3(x, y, z));
     }
 
     private void WriteToChunkData(int x, int y, int z)
     {
         x++;
         z++;
-        chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = 1;
+       // chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = 1;
     }
 }
