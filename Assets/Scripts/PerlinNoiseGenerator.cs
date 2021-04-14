@@ -40,7 +40,35 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public Transform chunkParent;
     public GameObject emtpyMeshPrefab;
 
-    private void Start()
+
+    private GameObject[] blockObjects;
+
+    private Vector3Int[] adjacentBlocksOffsets =
+    {
+        new Vector3Int(0, 0, 1),
+        new Vector3Int(0, 0, -1),
+        new Vector3Int(1, 0, 0),
+        new Vector3Int(-1, 0, 0),
+        new Vector3Int(0, 1, 0),
+        new Vector3Int(0, -1, 0)
+    };
+
+    private Vector3Int[] vertices =
+    {
+        new Vector3Int(0, 0, 0),
+        new Vector3Int(0, 0, 1),
+        new Vector3Int(1, 0, 0),
+        new Vector3Int(1, 0, 1)
+    };
+
+    private int[] triangles =
+    {
+        0, 1, 2,
+        1, 3, 2
+    };
+
+
+private void Start()
     {
 
 
@@ -162,19 +190,58 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = y + (chunkY * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                WriteBlockToChunkData(xCord, yCord, zCord);
+                SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
+                
                 //Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = chunkEmptyObject;
                 //SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
             }
         }
+        
+        // Go through every block again, but this time they have been spawned so now I can generate the meshes for them
+        for (int x=0; x<chunkSize; x++)
+        {
+            for (int y=0; y<chunkSize; y++)
+            {
+                int xCord = x + (chunkX * chunkSize);
+                int zCord = y + (chunkY * chunkSize);
+                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
+                GenerateMesh(new Vector3Int(xCord, yCord, zCord), chunkEmptyObject); // Generate the mesh for that block
+            }
+        }
 
-        GenerateMeshes(chunkEmptyObject);
+        
 
     }
 
-    private void GenerateMeshes(Transform chunk)
+    private int ReadChunkData(Vector3Int blockPos)
+    {
+        return chunkData[(((blockPos.x - 1) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)];
+    }
+
+    private GameObject GetBlockObject(Vector3Int blockPos)
+    {
+        return blockObjects[(((blockPos.x - 1) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)];
+    }
+
+    private void SetBlockObject(Vector3Int blockPos, GameObject blockGameObject)
+    {
+        blockObjects[(((blockPos.x - 1) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)] = blockGameObject;
+    }
+    private void GenerateMesh(Vector3Int blockPosition, Transform chunk)
     {
 
+
+        for (int i=0; i<6; i++) // For every adjacent block around this block, (four blocks)
+        {
+            if (ReadChunkData(blockPosition+adjacentBlocksOffsets[i]) == 0) { // Is there air next to me on i side? If so, I need to generate a mesh for that side
+
+                Mesh mesh = new Mesh();
+                
+
+            }
+
+        }
+            /*
         for (int x=0; x<chunkSize; x++) // For every x cord in the chunk
         {
             for (int i=x; i<chunkSize; i++) // For every block in the x cord which has not yet been searched
@@ -211,6 +278,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
             mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
         }
+        */
 
         
 
@@ -250,6 +318,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void SpawnBlock(int x, int y, int z, Transform chunk)
     {
         //Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
+        GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z), emtpyMeshPrefab.transform.rotation);
+        block.transform.parent = chunk;
+
         WriteBlockToChunkData(x, y, z);
         //chunkVertices.Add(new Vector3(x, y, z));
     }
@@ -260,5 +331,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
         x++;
         z++;
         chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = 1; // Update this array so we know what type of block there is, (dirt, air etc).
+
     }
+
+
 }
