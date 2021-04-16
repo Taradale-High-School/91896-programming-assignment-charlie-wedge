@@ -41,7 +41,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public GameObject emtpyMeshPrefab;
 
 
-    private GameObject[] blockObjects;
+    public GameObject[] blockObjects;
 
     private Vector3Int[] adjacentBlocksOffsets =
     {
@@ -53,12 +53,12 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3Int(0, -1, 0)
     };
 
-    private Vector3Int[] vertices =
+    private Vector3[] vertices =
     {
-        new Vector3Int(0, 0, 0),
-        new Vector3Int(0, 0, 1),
-        new Vector3Int(1, 0, 0),
-        new Vector3Int(1, 0, 1)
+        new Vector3(0, 0, 0),
+        new Vector3(0, 0, 1),
+        new Vector3(1, 0, 0),
+        new Vector3(1, 0, 1)
     };
 
     private int[] triangles =
@@ -72,9 +72,13 @@ private void Start()
     {
 
 
-
-
         chunkData = new int[(chunkSize * chunkSize * heightLimit)+1]; // Set's the size of the array
+        blockObjects = new GameObject[(chunkSize * chunkSize * heightLimit) + 1];
+
+        chunkVertices.Clear();
+        chunkNameCounter = 0;
+        DeleteWorld();
+        GenerateWorld();
         //print(chunkData.Length);
 
     }
@@ -85,10 +89,7 @@ private void Start()
     {
         //GenerateNoise();
 
-        chunkVertices.Clear();
-        chunkNameCounter = 0;
-        DeleteWorld();
-        GenerateWorld();
+
 
 
         if (Input.GetKeyDown(KeyCode.A))
@@ -181,8 +182,23 @@ private void Start()
         chunkNameCounter++;
 
         chunkEmptyObject.parent = worldParent;
+        
+        for (int y=0; y<heightLimit; y++)
+        {
+            for (int x = 0; x < chunkSize; x++)
+            {
+                for (int z = 0; z < chunkSize; z++)
+                {
+                    // Spawn an empty object in that position, even if it is air
+                    GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z), emtpyMeshPrefab.transform.rotation);
+                    block.transform.parent = chunkEmptyObject;
+                    SetBlockObject(new Vector3Int(x, y, z), block);
+                }
+            }
+        }
 
-        // Go through every possible block in this chunk (chunkSize*chunkSize*heightLimit)
+
+        // Go through every possible block in this chunk not on the y cord (spawn surface blocks only) (chunkSize*chunkSize)
         for (int x = 0; x < chunkSize; x++)
         {
             for (int y = 0; y < chunkSize; y++)
@@ -191,13 +207,13 @@ private void Start()
                 int zCord = y + (chunkY * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
                 SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
-                
+
                 //Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = chunkEmptyObject;
                 //SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
             }
         }
         
-        // Go through every block again, but this time they have been spawned so now I can generate the meshes for them
+        // Go through every block on the surface again, but this time they have been spawned so now I can generate the meshes for them
         for (int x=0; x<chunkSize; x++)
         {
             for (int y=0; y<chunkSize; y++)
@@ -225,7 +241,8 @@ private void Start()
 
     private void SetBlockObject(Vector3Int blockPos, GameObject blockGameObject)
     {
-        blockObjects[(((blockPos.x - 1) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)] = blockGameObject;
+        print(((((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)));
+        blockObjects[(((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)] = blockGameObject;
     }
     private void GenerateMesh(Vector3Int blockPosition, Transform chunk)
     {
@@ -236,7 +253,18 @@ private void Start()
             if (ReadChunkData(blockPosition+adjacentBlocksOffsets[i]) == 0) { // Is there air next to me on i side? If so, I need to generate a mesh for that side
 
                 Mesh mesh = new Mesh();
-                
+                GameObject meshObject = GetBlockObject(blockPosition); // Get this block object
+                meshObject.GetComponent<MeshFilter>().mesh = mesh;
+
+                if (i==4) // 4 = above this block
+                {
+                    mesh.vertices = vertices;
+                    mesh.triangles = triangles;
+                }
+
+                mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
+
+
 
             }
 
@@ -318,19 +346,19 @@ private void Start()
     private void SpawnBlock(int x, int y, int z, Transform chunk)
     {
         //Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
-        GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z), emtpyMeshPrefab.transform.rotation);
-        block.transform.parent = chunk;
+        //GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z), emtpyMeshPrefab.transform.rotation);
+        //block.transform.parent = chunk;
 
-        WriteBlockToChunkData(x, y, z);
+        WriteBlockToChunkData(x, y, z, 1);
         //chunkVertices.Add(new Vector3(x, y, z));
     }
 
-    private void WriteBlockToChunkData(int x, int y, int z)
+    private void WriteBlockToChunkData(int x, int y, int z, int blockType)
     {
         chunkVertices.Add(new Vector3(x, y, z)); // Write the block's vertices to this list, (so we can convert them to meshes later on). 
         x++;
         z++;
-        chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = 1; // Update this array so we know what type of block there is, (dirt, air etc).
+        chunkData[(((x - 1) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = blockType; // Update this array so we know what type of block there is, (dirt, air etc).
 
     }
 
