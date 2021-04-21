@@ -543,8 +543,8 @@ MonoBehaviour:
   playerChunkPosZ: 0
   heightLimit: 50
   chunkSize: 16
-  renderDistance: 1
-  noiseScale: 13
+  renderDistance: 5
+  noiseScale: 5
   perlinOffset: {x: 1000, y: 3289}
   chunkVertices: []
   worldParent: {fileID: 2076992686}
@@ -553,7 +553,6 @@ MonoBehaviour:
   emtpyMeshPrefab: {fileID: 5172422349473617331, guid: 1917d5d25ea859f4e8fb880d40906254,
     type: 3}
   testingGameObjectParent: {fileID: 1540266893}
-  blockObjects: []
   tempVerticesList: []
 --- !u!4 &2098694375
 Transform:

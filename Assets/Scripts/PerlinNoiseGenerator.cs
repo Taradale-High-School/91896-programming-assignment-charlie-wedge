@@ -32,7 +32,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private Texture2D perlinNoiseTexture;
 
     public List<Vector3> chunkVertices;
-    private int[] chunkData;
+    //private int[] chunkDataBlockTypes;
     private int[] availableChunkNames;
     private int chunkNameCounter = 0;
 
@@ -44,8 +44,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public Transform testingGameObjectParent;
 
+    private Dictionary<Vector2Int, GameObject> chunks;
 
-    public GameObject[] blockObjects;
+
 
     public List<Vector3> tempVerticesList;
 
@@ -59,6 +60,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3Int(0, -1, 0)
     };
 
+
+    private int[] baseTriangles =
+{
+        0, 1, 2,
+        2, 3, 0
+    };
+
     private Vector3[] verticesUp =
     {
         new Vector3(0, 1, 0),
@@ -66,78 +74,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(1, 1, 1),
         new Vector3(1, 1, 0)
     };
-    private int[] triangles1 =
-    {
-        0, 1, 2,
-        2, 3, 0
-    };
-    private int[] triangles2 =
-    {
-        0, 1, 2,
-        2, 3, 0,
-        4, 5, 6,
-        6, 7, 4
-    };
-    private int[] triangles3 =
-    {
-        0, 1, 2,
-        2, 3, 0,
-        4, 5, 6,
-        6, 7, 4,
-        8, 9, 10,
-        10, 11, 8
-    };
-    private int[] triangles4 =
-    {
-        0, 1, 2,
-        2, 3, 0,
-        4, 5, 6,
-        6, 7, 4,
-        8, 9, 10,
-        10, 11, 8,
-        12, 13, 14,
-        14, 15, 12
-    };
-    private int[] triangles5 =
-    {
-        0, 1, 2,
-        2, 3, 0,
-        4, 5, 6,
-        6, 7, 4,
-        8, 9, 10,
-        10, 11, 8,
-        12, 13, 14,
-        14, 15, 12,
-        16, 17, 18,
-        18, 19, 16
-    };
-    private int[] triangles6 =
-    {
-        0, 1, 2,
-        2, 3, 0,
-        4, 5, 6,
-        6, 7, 4,
-        8, 9, 10,
-        10, 11, 8,
-        12, 13, 14,
-        14, 15, 12,
-        16, 17, 18,
-        18, 19, 16,
-        20, 21, 22,
-        22, 23, 20
-    };
 
     private Vector3[] verticesDown =
     {
         new Vector3(0, 0, 0),
-        new Vector3(0, 0, 1),
+        new Vector3(1, 0, 0),
         new Vector3(1, 0, 1),
-        new Vector3(1, 0, 0)
-    };
-    private int[] trianglesDown =
-    {
-        0, 1, 2,
-        2, 3, 0
+        new Vector3(0, 0, 1)
     };
 
     private Vector3[] verticesFront =
@@ -147,11 +90,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(1, 0, 0),
         new Vector3(0, 0, 0)
     };
-    private int[] trianglesFront =
-    {
-        0, 1, 2,
-        2, 3, 0
-    };
 
     private Vector3[] verticesBack =
     {
@@ -159,11 +97,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(0, 0, 1),
         new Vector3(1, 0, 1),
         new Vector3(1, 1, 1)
-    };
-    private int[] trianglesBack =
-    {
-        0, 1, 2,
-        2, 3, 0
     };
 
     private Vector3[] verticesLeft =
@@ -173,11 +106,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(0, 0, 1),
         new Vector3(0, 1, 1)
     };
-    private int[] trianglesLeft =
-    {
-        0, 1, 2,
-        2, 3, 0
-    };
 
     private Vector3[] verticesRight =
     {
@@ -186,27 +114,22 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(1, 0, 1),
         new Vector3(1, 0, 0)
     };
-    private int[] trianglesRight =
-    {
-        0, 1, 2,
-        2, 3, 0
-    };
 
-
+  
 
     private void Start()
     {
 
 
-        chunkData = new int[(chunkSize * chunkSize * heightLimit)+1]; // Set's the size of the array
-        blockObjects = new GameObject[(chunkSize * chunkSize * heightLimit) + 1];
+        // Set the size of these arrays
+        int chunksAcross = renderDistance + (renderDistance - 1);
+        chunks = new Dictionary<Vector2Int, GameObject>();
 
 
         chunkVertices.Clear();
         chunkNameCounter = 0;
         DeleteWorld();
         GenerateWorld();
-        //print(chunkData.Length);
 
     }
 
@@ -219,12 +142,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
 
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            int randomIndex = Random.Range(0, chunkData.Length);
-            print("Index " + randomIndex + " = " + chunkData[randomIndex]);
-
-        }
         
     }
 
@@ -254,6 +171,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 GenerateChunk(i, -r);
             } 
         }
+
+        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunks!");
+        Debug.Break();
     }
 
     private void DeleteWorld()
@@ -302,14 +222,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private void GenerateChunk(int chunkX, int chunkZ)
     {
+        
+        //int[] chunkDataBlockTypes = new int[(chunkSize * chunkSize * heightLimit) + 1];
+        //GameObject[] blockObjects = new GameObject[(chunkSize * chunkSize * heightLimit) + 1];
+
+        GameObject[,,] blockObjects = new GameObject[chunkSize, heightLimit, chunkSize];
+        int[,,] chunkDataBlockTypes = new int[chunkSize, heightLimit, chunkSize];
+
         // Instantiate the empty chunk object in which this chunk's cubes will be placed in
         Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation);
-        chunkEmptyObject.name = chunkNameCounter.ToString();
+        chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name
+        chunks[new Vector2Int(chunkX, chunkZ)] = chunkEmptyObject.gameObject;
 
-        chunkNameCounter++;
+        print("Chunk Number " + chunkNameCounter + " - chunkX = " + chunkX + ", chunkZ = " + chunkZ + ", gameObject = " + chunks[new Vector2Int(chunkX, chunkZ)]);
+
 
         chunkEmptyObject.parent = worldParent;
-        
+
+        // For every soon-to-be block in this chunk...
         for (int y=0; y<heightLimit; y++)
         {
             for (int x = 0; x < chunkSize; x++)
@@ -319,7 +249,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     // Spawn an empty object in that position, even if it is air
                     GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z)+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation);
                     block.transform.parent = chunkEmptyObject;
-                    SetBlockObject(new Vector3Int(x, y, z), block);
+                    blockObjects[x, y, z] = block;
+
+                    
                 }
             }
         }
@@ -333,9 +265,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
+                //print(GetIndex(new Vector3Int(x, yCord, z)));
+                chunkDataBlockTypes[x, yCord, z] = 1; // Write to the chunkDataBlockTypes array
 
-                Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = testingGameObjectParent;
+                //SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
+                // Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = testingGameObjectParent;
                 //SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
             }
         }
@@ -348,221 +282,140 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                GenerateMesh(new Vector3Int(xCord, yCord, zCord), chunkEmptyObject); // Generate the mesh for that block
+                GenerateMesh(new Vector3Int(x, yCord, z), blockObjects[x, yCord, z], chunkDataBlockTypes); // Generate the mesh for that block
             }
         }
 
-        
+        chunkEmptyObject.position = new Vector3(chunkX * chunkSize, chunkEmptyObject.position.y, chunkZ * chunkSize);
+
+
+        // Feed all of this information to the chunk's script since I don't need it here anymore, but we will need it in the future
+        Chunk chunkScript = chunks[new Vector2Int(chunkX, chunkZ)].GetComponent<Chunk>();
+        chunkScript.WriteChunkDataBlockTypes(chunkDataBlockTypes);
+        chunkScript.WriteChunkBlockObjects(blockObjects);
+
+        // Increment this ready for the next chunk to be generated
+        chunkNameCounter++;
+
+
+        //Debug.Break();
 
     }
 
-    private int ReadChunkData(Vector3Int blockPos)
+    // Each index in this game's arrays are paired to an x,y,z cord. This function works out said index with a Vector3
+    private int GetIndex(Vector3Int pos)
     {
-        return chunkData[(((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)];
+        int num = (((pos.x) * chunkSize) + pos.z) + ((chunkSize * chunkSize) * (pos.y)); // math is evil yet very helpful
+
+        if (num < 0)
+        {
+            Debug.LogError("Returned index is a negitive number. (function GetIndex()) Number = " + num + "\nx= " + pos.x + "\ny= " + pos.y + "\nz= " + pos.z);
+            return 0;
+        }
+
+        return num;
     }
 
-    private GameObject GetBlockObject(Vector3Int blockPos)
-    {
-        return blockObjects[(((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)];
-    }
-
-    private void SetBlockObject(Vector3Int blockPos, GameObject blockGameObject)
-    {
-        //print(((((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)));
-        blockObjects[(((blockPos.x) * chunkSize) + blockPos.z) + ((chunkSize * chunkSize) * blockPos.y)] = blockGameObject;
-    }
-    private void GenerateMesh(Vector3Int blockPosition, Transform chunk)
+    private void GenerateMesh(Vector3Int blockPosition, GameObject block, int[,,] blockDataTypes)
     {
 
-        int loopCount = 1;
+
+
+        int loopCount = 0;
         tempVerticesList.Clear();
 
-        for (int i=0; i<6; i++) // For every adjacent block around this block, (four blocks)
+        for (int i=0; i<6; i++) // For every adjacent block around this block, (six blocks)
         {
-            if (ReadChunkData(blockPosition+adjacentBlocksOffsets[i]+new Vector3Int(0, 1, 0)) == 0) { // Is there air next to me on i side? If so, I need to generate a mesh for that side
+            //print("x= " + blockPosition.x + ", y= " + blockPosition.y + ", z= " + blockPosition.z);
+            Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i];
+            if (blockToSearch.x >= 0 && blockToSearch.y >= 0 && blockToSearch.z >= 0 && blockToSearch.x < chunkSize && blockToSearch.y < heightLimit && blockToSearch.z < chunkSize)
+            {
+                if (blockDataTypes[blockToSearch.x, blockToSearch.y, blockToSearch.z] == 0)
+                { // Is there air next to me on i side? If so, I need to generate a mesh for that side
 
+                    /* COPYED FROM TOP OF SCRIPT:
+                          private Vector3Int[] adjacentBlocksOffsets =
+                          {
+                             new Vector3Int(0, 0, 1),
+                             new Vector3Int(0, 0, -1),
+                             new Vector3Int(1, 0, 0),
+                             new Vector3Int(-1, 0, 0),
+                             new Vector3Int(0, 1, 0),
+                             new Vector3Int(0, -1, 0)
+                          };      
+                    */
 
+                    if (i == 0)
+                    {
+                        tempVerticesList.AddRange(verticesBack);
+                    }
+                    else if (i == 1)
+                    {
+                        tempVerticesList.AddRange(verticesFront);
+                    }
+                    else if (i == 2)
+                    {
+                        tempVerticesList.AddRange(verticesRight);
+                    }
+                    else if (i == 3)
+                    {
+                        tempVerticesList.AddRange(verticesLeft);
+                    }
+                    else if (i == 4)
+                    {
+                        tempVerticesList.AddRange(verticesUp);
+                    }
+                    else if (i == 5)
+                    {
+                        tempVerticesList.AddRange(verticesDown);
+                    }
 
-                /* COPY FROM TOP OF SCRIPT:
-                      private Vector3Int[] adjacentBlocksOffsets =
-                      {
-                         new Vector3Int(0, 0, 1),
-                         new Vector3Int(0, 0, -1),
-                         new Vector3Int(1, 0, 0),
-                         new Vector3Int(-1, 0, 0),
-                         new Vector3Int(0, 1, 0),
-                         new Vector3Int(0, -1, 0)
-                      };      
-                */
+                    loopCount++;
 
-               // print(i);
-                
-
-                if (i==0)
-                {
-                    //mesh.vertices = verticesBack;
-                    //mesh.vertices = mesh.vertices.Concat(verticesBack).ToArray();
-                    tempVerticesList.AddRange(verticesBack);
-                    
                 }
-                else if (i==1)
-                {
-                    //mesh.vertices = verticesFront;
-                    //mesh.vertices = mesh.vertices.Concat(verticesFront).ToArray();
-                    tempVerticesList.AddRange(verticesFront);
-                }
-                else if (i==2)
-                {
-                    //mesh.vertices = verticesRight;
-                    //mesh.vertices = mesh.vertices.Concat(verticesRight).ToArray();
-                    tempVerticesList.AddRange(verticesRight);
-                }
-                else if (i==3)
-                {
-                    //mesh.vertices = verticesLeft;
-                    //mesh.vertices = mesh.vertices.Concat(verticesLeft).ToArray();
-                    tempVerticesList.AddRange(verticesLeft);
-                }
-                else if (i==4)
-                {
-                    //mesh.vertices = verticesUp;
-                    //mesh.vertices = mesh.vertices.Concat(verticesUp).ToArray();
-                    tempVerticesList.AddRange(verticesUp);
-                }
-                else if (i==5)
-                {
-                    //mesh.vertices = verticesDown;
-                    //mesh.vertices = mesh.vertices.Concat(verticesDown).ToArray();
-                    tempVerticesList.AddRange(verticesDown);
-                }
-
-                loopCount++;
-
             }
 
         }
 
         Mesh mesh = new Mesh();
-        GameObject meshObject = GetBlockObject(blockPosition); // Get this block object
+        GameObject meshObject = block; // Get this block object
         meshObject.GetComponent<MeshFilter>().mesh = mesh;
 
-        //mesh.vertices = new Vector3[4 * loopCount];
-        Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount];
+        // Create vertices:
+        Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount]; // This must be used otherwise it won't work
 
-        for (int j = 0; j < tempVerticesList.Count; j++)
+        for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array
         {
        
-            tempMeshVerticesArray[j] = tempVerticesList[j];
-            //print(tempMeshVerticesArray[j]);
+            tempMeshVerticesArray[j] = tempVerticesList[j]; 
         }
 
         mesh.vertices = tempMeshVerticesArray;
-        /*
-        int[] tempTriangles = new int[6 * loopCount];
 
-        for (int j=0; j<loopCount; j++)
+
+        // Create triangles:
+        int[] tempTriangles = new int[6 * loopCount];
+        int indexCount = 0;
+        // all vertices use the same triangles, (baseTriangles), I just need to increment the values
+        for (int i=1; i<loopCount+1; i++)
         {
-            for (int k=0; k<triangles.Length; k++)
+            for (int k=0; k<baseTriangles.Length; k++)
             {
-                tempTriangles[(loopCount*j)+k] = triangles[k]+(3*(loopCount-1));
+                tempTriangles[indexCount] = baseTriangles[k] + (4 * (i - 1));
+                indexCount++;
             }
         }
 
         mesh.triangles = tempTriangles;
-        */
 
-        if (loopCount == 1)
-        {
-            mesh.triangles = triangles1;
-        }
-        else if (loopCount == 2)
-        {
-            mesh.triangles = triangles2;
-        }
-        else if (loopCount == 3)
-        {
-            mesh.triangles = triangles3;
-        }
-        else if (loopCount == 4)
-        {
-            mesh.triangles = triangles4;
-        }
-        else if (loopCount == 5)
-        {
-            mesh.triangles = triangles5;
-        }
-        else if (loopCount == 6)
-        {
-            mesh.triangles = triangles6;
-        }
-        else
-        {
-            Debug.LogError("Yeah something went wrong");
-            Debug.Break();
-        }
-
-        //int[] tempTrianglesArray = triangles;
-
-        //mesh.triangles = mesh.triangles.Concat(tempTrianglesArray).ToArray();
 
         mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
-
-        
-
-       // print("--------------------------------");
-        for (int j = 0; j < mesh.vertices.Length; j++)
-        {
-            //print(mesh.vertices[j]);
-        }
-
-
-        /*
-    for (int x=0; x<chunkSize; x++) // For every x cord in the chunk
-    {
-        for (int i=x; i<chunkSize; i++) // For every block in the x cord which has not yet been searched
-        {
-            // Search how many more blocks are in thsi cord which can all geneerate a mesh together
-        }
-
-        Mesh mesh = new Mesh();
-        GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Instantiate an empty object to turn into a mesh
-        meshObject.GetComponent<MeshFilter>().mesh = mesh;
-        meshObject.transform.parent = chunk;
-
-
-
-        Vector3[] vertices;
-        int[] triangles;
-
-        vertices = new Vector3[]
-        {
-            new Vector3(0, 0, 0),
-            new Vector3(0, 0, 1),
-            new Vector3(1, 0, 0),
-            new Vector3(1, 0, 1)
-        };
-
-        triangles = new int[]
-        {
-            0, 1, 2,
-            1, 3, 2 
-        };
-
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-
-        mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
-    }
-    */
-
-
-
 
 
 
     }
 
-            private float SampleStepped(int x, int y)
+    private float SampleStepped(int x, int y)
     {
         /*
         int gridStepSizeX = perlinTextureSizeX / perlinGridStepSizeX;
@@ -577,10 +430,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         float sample = Mathf.PerlinNoise(xCoord, yCoord); // Get that value
 
-        //return sampleFloat;
-        return sample;
+        //print(sample);
+        return Mathf.Clamp(sample, 0, 1); // Sometimes perlin noise can return a value outside of the [0, 1] range. Weird right? This fixes that
 
     }
+    /*
     // Spawn blocks from bedrock to the surface
     private void SpawnBlocksUnder(int xCord, int maxY, int zCord, Transform chunk)
     {
@@ -589,7 +443,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             SpawnBlock(xCord, y, zCord, chunk);
         }
     }
-
+    
     private void SpawnBlock(int x, int y, int z, Transform chunk)
     {
         //Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
@@ -605,9 +459,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
         chunkVertices.Add(new Vector3(x, y, z)); // Write the block's vertices to this list, (so we can convert them to meshes later on). 
         //x++;
         //z++;
-        chunkData[(((x) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = blockType; // Update this array so we know what type of block there is, (dirt, air etc).
+        chunkDataBlockTypes[(((x) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = blockType; // Update this array so we know what type of block there is, (dirt, air etc).
 
     }
+    */
+    
 
 
 }
