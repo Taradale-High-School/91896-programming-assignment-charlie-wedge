@@ -3,18 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-using System.Linq;
-
 public class PerlinNoiseGenerator : MonoBehaviour
 {
-    public GameObject cubePrefab; // Prefab to spawn
-    public RawImage imageToApplyTo;
-
+    // Most of these varaibles are public to make it easier for me to debug and change their values in the editor
     public int perlinTextureSizeX;
     public int perlinTextureSizeY;
 
-    public int perlinGridStepSizeX;
-    public int perlinGridStepSizeY;
     public float worldHeightScale;
 
     public int playerChunkPosX;
@@ -27,29 +21,20 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public int noiseScale;
 
-    public Vector2 perlinOffset; // The offset in which we search the perlin noise at
+    public Vector2 perlinOffset; // The offset in which we search the perlin noise at (seed)
 
-    private Texture2D perlinNoiseTexture;
-
-    public List<Vector3> chunkVertices;
-    //private int[] chunkDataBlockTypes;
-    private int[] availableChunkNames;
     private int chunkNameCounter = 0;
-
-   // private arr[][][] chunkData;
 
     public Transform worldParent;
     public Transform chunkParent;
     public GameObject emtpyMeshPrefab;
 
-    public Transform testingGameObjectParent;
-
-    private Dictionary<Vector2Int, GameObject> chunks;
-
+    private Dictionary<Vector2Int, GameObject> chunks; // Keeps track of each chunk empty object
+    private Dictionary<Vector3Int, int> blockTypes; // Keeps track of each block type
 
 
-    public List<Vector3> tempVerticesList;
 
+    // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
     {
         new Vector3Int(0, 0, 1),
@@ -60,13 +45,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3Int(0, -1, 0)
     };
 
-
+    // The two triangles which all the vertices use:
     private int[] baseTriangles =
-{
+    {
         0, 1, 2,
         2, 3, 0
     };
-
+    // Vertices which make up each side of a block:
     private Vector3[] verticesUp =
     {
         new Vector3(0, 1, 0),
@@ -86,7 +71,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private Vector3[] verticesFront =
     {
         new Vector3(0, 1, 0),
-        new Vector3(1, 1, 0), 
+        new Vector3(1, 1, 0),
         new Vector3(1, 0, 0),
         new Vector3(0, 0, 0)
     };
@@ -115,20 +100,15 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(1, 0, 0)
     };
 
-  
+
 
     private void Start()
     {
-
-
-        // Set the size of these arrays
-        int chunksAcross = renderDistance + (renderDistance - 1);
         chunks = new Dictionary<Vector2Int, GameObject>();
+        blockTypes = new Dictionary<Vector3Int, int>();
 
-
-        chunkVertices.Clear();
         chunkNameCounter = 0;
-        DeleteWorld();
+
         GenerateWorld();
 
     }
@@ -137,12 +117,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //GenerateNoise();
 
 
-
-
-        
     }
 
     // Call this function when generating the world for the first time
@@ -154,10 +130,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
         // let r=current renderDistance 'outline' to spawn
         for (int r = 1; r < renderDistance; r++) // For every 'outline'...
         {
-            for (int i = -(r-1); i < r+1; i++) // Basiclly spawns every chunk in the 'outline'
+            for (int i = -(r - 1); i < r + 1; i++) // Basiclly spawns every chunk in the 'outline'
             {
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
-                if (r==i && r>0)
+                if (r == i && r > 0)
                 {
                     GenerateChunk(-i, -r);
                 }
@@ -169,16 +145,60 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 GenerateChunk(r, i);
                 GenerateChunk(-r, i);
                 GenerateChunk(i, -r);
-            } 
+            }
         }
 
-        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunks!");
+        // Later on in this game's development, this code will be upgraded to only spawn meshes in chunks which are visible to the player:
+        GenerateMeshForChunk(0, 0); // The center chunk, (which the player spawns on)
+
+        // let r=current renderDistance 'outline' to spawn
+        for (int r = 1; r < renderDistance; r++) // For every 'outline'...
+        {
+            for (int i = -(r - 1); i < r + 1; i++) // Basiclly spawns every chunk in the 'outline'
+            {
+                // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
+                if (r == i && r > 0)
+                {
+                    GenerateMeshForChunk(-i, -r);
+                }
+                else
+                {
+                    GenerateMeshForChunk(i, r);
+                }
+
+                GenerateMeshForChunk(r, i);
+                GenerateMeshForChunk(-r, i);
+                GenerateMeshForChunk(i, -r);
+            }
+        }
+
+        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunks in " + Time.realtimeSinceStartup + " seconds!");
         Debug.Break();
+    }
+
+    // This function generates the meshes for each block in the chunk specified
+    private void GenerateMeshForChunk(int chunkX, int chunkZ)
+    {
+        for (int x = 0; x < chunkSize; x++) // For every block x
+        {
+            for (int z = 0; z < chunkSize; z++) // For every block z
+            {
+                int xCord = x + (chunkX * chunkSize);
+                int zCord = z + (chunkZ * chunkSize);
+                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
+                for (int y=0; y<yCord+1; y++)
+                {
+                    if (blockTypes[new Vector3Int(xCord, y, zCord)] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
+                    {
+                        GenerateMesh(new Vector3Int(xCord, y, zCord), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform); // Generate the mesh for that block
+                    }
+                }
+            }
+        }
     }
 
     private void DeleteWorld()
     {
-        //print(worldParent.childCount);
         for (int i = 0; i < worldParent.childCount; i++)
         {
             Destroy(worldParent.GetChild(i).gameObject); // Delete each chunk which is currently in the hierarchy
@@ -186,284 +206,173 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     }
 
-    /*
-    private void GenerateNoise()
-    {
-        perlinNoiseTexture = new Texture2D(perlinTextureSizeX, perlinTextureSizeY); // Generate the base texture at the correct size
-
-        for (int x = 0; x < perlinTextureSizeX; x++)
-        {
-            for (int y = 0; y < perlinTextureSizeY; y++)
-            {
-                perlinNoiseTexture.SetPixel(x, y, SampleNoise(x, y));
-            }
-        }
-
-        perlinNoiseTexture.Apply(); // Save (apply) our changes
-        imageToApplyTo.texture = perlinNoiseTexture;
-
-    }
-    */
-
-    // Returns the value of the specified coordinates by searching in Mathf.PerlinNoise()
-    Color SampleNoise(int x, int y)
-    {
-        // Get valid coordinates so Mathf.PerlinNoise() doesn't get mad at us
-        float xCoord = (float)x / perlinTextureSizeX * noiseScale + perlinOffset.x;
-        float yCoord = (float)y / perlinTextureSizeY * noiseScale + perlinOffset.y;
-
-        float sample = Mathf.PerlinNoise(xCoord, yCoord); // Get that value
-        Color perlinColor = new Color(sample, sample, sample); // This causes a greyscale pixel to be formed
-        //print("sample = " + sample + ", colour = " + perlinColor);
-        return perlinColor;
-    }
-
-
-
+    // Do everything required to generate a chunk at x,z
     private void GenerateChunk(int chunkX, int chunkZ)
     {
-        
-        //int[] chunkDataBlockTypes = new int[(chunkSize * chunkSize * heightLimit) + 1];
-        //GameObject[] blockObjects = new GameObject[(chunkSize * chunkSize * heightLimit) + 1];
-
-        GameObject[,,] blockObjects = new GameObject[chunkSize, heightLimit, chunkSize];
-        int[,,] chunkDataBlockTypes = new int[chunkSize, heightLimit, chunkSize];
-
-        // Instantiate the empty chunk object in which this chunk's cubes will be placed in
-        Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation);
-        chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name
-        chunks[new Vector2Int(chunkX, chunkZ)] = chunkEmptyObject.gameObject;
-
-        print("Chunk Number " + chunkNameCounter + " - chunkX = " + chunkX + ", chunkZ = " + chunkZ + ", gameObject = " + chunks[new Vector2Int(chunkX, chunkZ)]);
-
+        Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation); // Instantiate the empty chunk object in which this chunk's cubes will be placed in
+        chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name to make it neat
+        chunks[new Vector2Int(chunkX, chunkZ)] = chunkEmptyObject.gameObject; // Add the chunk object to the chunks array for reference later on when adding blocks
 
         chunkEmptyObject.parent = worldParent;
 
-        // For every soon-to-be block in this chunk...
-        for (int y=0; y<heightLimit; y++)
-        {
-            for (int x = 0; x < chunkSize; x++)
-            {
-                for (int z = 0; z < chunkSize; z++)
-                {
-                    // Spawn an empty object in that position, even if it is air
-                    GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z)+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation);
-                    block.transform.parent = chunkEmptyObject;
-                    blockObjects[x, y, z] = block;
 
-                    
-                }
-            }
-        }
-
-
-        // Go through every possible block in this chunk not on the y cord (spawn surface blocks only) (chunkSize*chunkSize)
+        // Go through every possible block in this chunk to both spawn them and give them their respective values
         for (int x = 0; x < chunkSize; x++)
         {
             for (int z = 0; z < chunkSize; z++)
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
-                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                //print(GetIndex(new Vector3Int(x, yCord, z)));
-                chunkDataBlockTypes[x, yCord, z] = 1; // Write to the chunkDataBlockTypes array
+                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale); // yCord = Surface
 
-                //SpawnBlock(xCord, yCord, zCord, chunkEmptyObject);
-                // Instantiate(cubePrefab, new Vector3(xCord, yCord, zCord), cubePrefab.transform.rotation).transform.parent = testingGameObjectParent;
-                //SpawnBlocksUnder(xCord, yCord, zCord, chunkEmptyObject);
-            }
-        }
-        
-        // Go through every block on the surface again, but this time they have been spawned so now I can generate the meshes for them
-        for (int x=0; x<chunkSize; x++)
-        {
-            for (int z=0; z<chunkSize; z++)
-            {
-                int xCord = x + (chunkX * chunkSize);
-                int zCord = z + (chunkZ * chunkSize);
-                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                GenerateMesh(new Vector3Int(x, yCord, z), blockObjects[x, yCord, z], chunkDataBlockTypes); // Generate the mesh for that block
+                blockTypes[new Vector3Int(xCord, yCord, zCord)] = 1; // Set every block on the surface to grass (1 = grass)
+
+                for (int y = 0; y < yCord; y++) // Set every block below the surface to stone
+                {
+                    blockTypes[new Vector3Int(xCord, y, zCord)] = 2; // 2 = stone
+                }
+
+                for (int y=yCord+1; y<heightLimit; y++) // Set every block above the surface to air
+                {
+                    blockTypes[new Vector3Int(xCord, y, zCord)] = 0; // 0 = air
+                }
+
+
+
             }
         }
 
-        chunkEmptyObject.position = new Vector3(chunkX * chunkSize, chunkEmptyObject.position.y, chunkZ * chunkSize);
-
-
-        // Feed all of this information to the chunk's script since I don't need it here anymore, but we will need it in the future
-        Chunk chunkScript = chunks[new Vector2Int(chunkX, chunkZ)].GetComponent<Chunk>();
-        chunkScript.WriteChunkDataBlockTypes(chunkDataBlockTypes);
-        chunkScript.WriteChunkBlockObjects(blockObjects);
+        //chunkEmptyObject.position = new Vector3(chunkX * chunkSize, chunkEmptyObject.position.y, chunkZ * chunkSize);
 
         // Increment this ready for the next chunk to be generated
         chunkNameCounter++;
 
-
-        //Debug.Break();
-
     }
 
-    // Each index in this game's arrays are paired to an x,y,z cord. This function works out said index with a Vector3
-    private int GetIndex(Vector3Int pos)
+    // Generate a mesh for the given block
+    private void GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject)
     {
-        int num = (((pos.x) * chunkSize) + pos.z) + ((chunkSize * chunkSize) * (pos.y)); // math is evil yet very helpful
-
-        if (num < 0)
-        {
-            Debug.LogError("Returned index is a negitive number. (function GetIndex()) Number = " + num + "\nx= " + pos.x + "\ny= " + pos.y + "\nz= " + pos.z);
-            return 0;
-        }
-
-        return num;
-    }
-
-    private void GenerateMesh(Vector3Int blockPosition, GameObject block, int[,,] blockDataTypes)
-    {
-
 
 
         int loopCount = 0;
-        tempVerticesList.Clear();
+        List<Vector3> tempVerticesList = new List<Vector3>();
+        bool quadAdded = false; // Has there been anything added to the mesh?
 
-        for (int i=0; i<6; i++) // For every adjacent block around this block, (six blocks)
+        for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
         {
-            //print("x= " + blockPosition.x + ", y= " + blockPosition.y + ", z= " + blockPosition.z);
-            Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i];
-            if (blockToSearch.x >= 0 && blockToSearch.y >= 0 && blockToSearch.z >= 0 && blockToSearch.x < chunkSize && blockToSearch.y < heightLimit && blockToSearch.z < chunkSize)
+
+            Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i]; // The adjacent block to search
+            int finalBlockTypeValue;
+
+            if (blockTypes.ContainsKey(blockToSearch)) // If the block exists (has been generated)
             {
-                if (blockDataTypes[blockToSearch.x, blockToSearch.y, blockToSearch.z] == 0)
-                { // Is there air next to me on i side? If so, I need to generate a mesh for that side
+                finalBlockTypeValue = blockTypes[blockToSearch];
+            }
+            else
+            {
+                finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
+            }
 
-                    /* COPYED FROM TOP OF SCRIPT:
-                          private Vector3Int[] adjacentBlocksOffsets =
-                          {
-                             new Vector3Int(0, 0, 1),
-                             new Vector3Int(0, 0, -1),
-                             new Vector3Int(1, 0, 0),
-                             new Vector3Int(-1, 0, 0),
-                             new Vector3Int(0, 1, 0),
-                             new Vector3Int(0, -1, 0)
-                          };      
-                    */
+            if (finalBlockTypeValue == 0) // Is there air next to me on i side? If so, I need to generate a quad for that side
+            { 
 
-                    if (i == 0)
-                    {
-                        tempVerticesList.AddRange(verticesBack);
-                    }
-                    else if (i == 1)
-                    {
-                        tempVerticesList.AddRange(verticesFront);
-                    }
-                    else if (i == 2)
-                    {
-                        tempVerticesList.AddRange(verticesRight);
-                    }
-                    else if (i == 3)
-                    {
-                        tempVerticesList.AddRange(verticesLeft);
-                    }
-                    else if (i == 4)
-                    {
-                        tempVerticesList.AddRange(verticesUp);
-                    }
-                    else if (i == 5)
-                    {
-                        tempVerticesList.AddRange(verticesDown);
-                    }
+                /* COPYED FROM TOP OF SCRIPT:
+                private Vector3Int[] adjacentBlocksOffsets =
+                {
+                    new Vector3Int(0, 0, 1),
+                    new Vector3Int(0, 0, -1),
+                    new Vector3Int(1, 0, 0),
+                    new Vector3Int(-1, 0, 0),
+                    new Vector3Int(0, 1, 0),
+                    new Vector3Int(0, -1, 0)
+                };      
+                */
+                quadAdded = true;
 
-                    loopCount++;
+                if (i == 0)
+                {
+                    tempVerticesList.AddRange(verticesBack);
+                }
+                else if (i == 1)
+                {
+                    tempVerticesList.AddRange(verticesFront);
+                }
+                else if (i == 2)
+                {
+                    tempVerticesList.AddRange(verticesRight);
+                }
+                else if (i == 3)
+                {
+                    tempVerticesList.AddRange(verticesLeft);
+                }
+                else if (i == 4)
+                {
+                    tempVerticesList.AddRange(verticesUp);
+                }
+                else if (i == 5)
+                {
+                    tempVerticesList.AddRange(verticesDown);
+                }
 
+                loopCount++;
+
+            }
+
+
+        }
+        if (quadAdded)
+        {
+
+            Mesh mesh = new Mesh();
+            GameObject meshObject = Instantiate(emtpyMeshPrefab, blockPosition+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
+            meshObject.transform.parent = chunkEmptyObject;
+            meshObject.GetComponent<MeshFilter>().mesh = mesh;
+
+            // Create vertices:
+            Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount];
+
+            for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array (it's stupid but it must be done manually otherwise C# will have a fit)
+            {
+                tempMeshVerticesArray[j] = tempVerticesList[j];
+            }
+
+            mesh.vertices = tempMeshVerticesArray;
+
+
+            // Create triangles:
+            int[] tempTriangles = new int[6 * loopCount];
+            int indexCount = 0;
+            // (all vertices use the same triangles, (baseTriangles), I just need to increment the values)
+            for (int i = 1; i < loopCount + 1; i++)
+            {
+                for (int k = 0; k < baseTriangles.Length; k++)
+                {
+                    tempTriangles[indexCount] = baseTriangles[k] + (4 * (i - 1));
+                    indexCount++;
                 }
             }
 
+            mesh.triangles = tempTriangles;
+
+
+            mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
         }
 
-        Mesh mesh = new Mesh();
-        GameObject meshObject = block; // Get this block object
-        meshObject.GetComponent<MeshFilter>().mesh = mesh;
-
-        // Create vertices:
-        Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount]; // This must be used otherwise it won't work
-
-        for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array
-        {
-       
-            tempMeshVerticesArray[j] = tempVerticesList[j]; 
-        }
-
-        mesh.vertices = tempMeshVerticesArray;
-
-
-        // Create triangles:
-        int[] tempTriangles = new int[6 * loopCount];
-        int indexCount = 0;
-        // all vertices use the same triangles, (baseTriangles), I just need to increment the values
-        for (int i=1; i<loopCount+1; i++)
-        {
-            for (int k=0; k<baseTriangles.Length; k++)
-            {
-                tempTriangles[indexCount] = baseTriangles[k] + (4 * (i - 1));
-                indexCount++;
-            }
-        }
-
-        mesh.triangles = tempTriangles;
-
-
-        mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
-
-
 
     }
 
-    private float SampleStepped(int x, int y)
+    // Get the height of the surface for x,z based on perlin noise
+    private float SampleStepped(int x, int z)
     {
-        /*
-        int gridStepSizeX = perlinTextureSizeX / perlinGridStepSizeX;
-        int gridStepSizeY = perlinTextureSizeY / perlinGridStepSizeY;
+        // Get valid coordinates for Mathf.PerlinNoise() to use
+        float xCord = (float)x / perlinTextureSizeX * noiseScale + perlinOffset.x;
+        float zCord = (float)z / perlinTextureSizeY * noiseScale + perlinOffset.y;
 
-        float sampleFloat = perlinNoiseTexture.GetPixel((Mathf.FloorToInt(x * gridStepSizeX)), (Mathf.FloorToInt(y * gridStepSizeX))).grayscale;
-        */
+        float sample = Mathf.PerlinNoise(xCord, zCord);
 
-        // Get valid coordinates so Mathf.PerlinNoise() doesn't get mad at us
-        float xCoord = (float)x / perlinTextureSizeX * noiseScale + perlinOffset.x;
-        float yCoord = (float)y / perlinTextureSizeY * noiseScale + perlinOffset.y;
-
-        float sample = Mathf.PerlinNoise(xCoord, yCoord); // Get that value
-
-        //print(sample);
-        return Mathf.Clamp(sample, 0, 1); // Sometimes perlin noise can return a value outside of the [0, 1] range. Weird right? This fixes that
+        return Mathf.Clamp(sample, 0, 1); // Sometimes perlin noise can return a value outside of the [0, 1] range. Weird right? Mathf.Clamp() fixes that
 
     }
-    /*
-    // Spawn blocks from bedrock to the surface
-    private void SpawnBlocksUnder(int xCord, int maxY, int zCord, Transform chunk)
-    {
-        for (int y = 0; y < maxY; y++)
-        {
-            SpawnBlock(xCord, y, zCord, chunk);
-        }
-    }
-    
-    private void SpawnBlock(int x, int y, int z, Transform chunk)
-    {
-        //Instantiate(cubePrefab, new Vector3(x, y, z), cubePrefab.transform.rotation).transform.parent = chunk;
-        //GameObject block = Instantiate(emtpyMeshPrefab, new Vector3(x, y, z), emtpyMeshPrefab.transform.rotation);
-        //block.transform.parent = chunk;
-
-        WriteBlockToChunkData(x, y, z, 1);
-        //chunkVertices.Add(new Vector3(x, y, z));
-    }
-
-    private void WriteBlockToChunkData(int x, int y, int z, int blockType)
-    {
-        chunkVertices.Add(new Vector3(x, y, z)); // Write the block's vertices to this list, (so we can convert them to meshes later on). 
-        //x++;
-        //z++;
-        chunkDataBlockTypes[(((x) * chunkSize) + z)+((chunkSize*chunkSize)*y)] = blockType; // Update this array so we know what type of block there is, (dirt, air etc).
-
-    }
-    */
-    
 
 
 }

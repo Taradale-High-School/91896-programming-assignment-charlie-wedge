@@ -341,36 +341,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1540266892
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1540266893}
-  m_Layer: 0
-  m_Name: testung thing
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1540266893
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1540266892}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1758944967
 GameObject:
   m_ObjectHideFlags: 0
@@ -531,29 +501,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d066bc01a3b7e4f3b90357ad393c00da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cubePrefab: {fileID: 4925490386373621607, guid: baf20bfaa8080417f89ef54f643d8671,
-    type: 3}
-  imageToApplyTo: {fileID: 564195392}
   perlinTextureSizeX: 256
   perlinTextureSizeY: 256
-  perlinGridStepSizeX: 50
-  perlinGridStepSizeY: 50
   worldHeightScale: 40
   playerChunkPosX: 0
   playerChunkPosZ: 0
   heightLimit: 50
   chunkSize: 16
-  renderDistance: 5
+  renderDistance: 6
   noiseScale: 5
   perlinOffset: {x: 1000, y: 3289}
-  chunkVertices: []
   worldParent: {fileID: 2076992686}
   chunkParent: {fileID: 4940573995945565891, guid: 0fefa12b8dcb243caa262beb1dc7b5ca,
     type: 3}
   emtpyMeshPrefab: {fileID: 5172422349473617331, guid: 1917d5d25ea859f4e8fb880d40906254,
     type: 3}
-  testingGameObjectParent: {fileID: 1540266893}
-  tempVerticesList: []
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0
