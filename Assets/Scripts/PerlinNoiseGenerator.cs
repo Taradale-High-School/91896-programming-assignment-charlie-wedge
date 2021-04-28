@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PerlinNoiseGenerator : MonoBehaviour
 {
@@ -173,7 +172,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         }
 
         print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunks in " + Time.realtimeSinceStartup + " seconds!");
-        Debug.Break();
+       // Debug.Break();
     }
 
     // This function generates the meshes for each block in the chunk specified
