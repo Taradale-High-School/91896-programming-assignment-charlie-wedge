@@ -31,7 +31,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private Dictionary<Vector2Int, GameObject> chunks; // Keeps track of each chunk empty object
     private Dictionary<Vector3Int, int> blockTypes; // Keeps track of each block type
 
-
+    private Mesh mesh;
+    private List<Vector3> tempVerticesList;
+    private List<int> tempTrianglesList;
+    private int loopCount = 0;
 
     // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
@@ -103,13 +106,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private void Start()
     {
+        
         chunks = new Dictionary<Vector2Int, GameObject>();
         blockTypes = new Dictionary<Vector3Int, int>();
 
         chunkNameCounter = 0;
 
         GenerateWorld();
-
+        
     }
 
 
@@ -171,13 +175,17 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
         }
 
-        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunks in " + Time.realtimeSinceStartup + " seconds!");
-       // Debug.Break();
+        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunk" + ((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) == 1 ? "" : "s") + " in " + Time.realtimeSinceStartup + " seconds!\n(" + Time.realtimeSinceStartup/((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1))) + " seconds per chunk!)");
+        //Debug.Break();
     }
 
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ)
     {
+        mesh = new Mesh();
+        tempVerticesList = new List<Vector3>();
+        tempTrianglesList = new List<int>();
+
         for (int x = 0; x < chunkSize; x++) // For every block x
         {
             for (int z = 0; z < chunkSize; z++) // For every block z
@@ -194,6 +202,46 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 }
             }
         }
+
+
+        // Create vertices:
+        Vector3[] tempMeshVerticesArray = new Vector3[tempVerticesList.Count];
+        for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array (it's stupid but it must be done manually otherwise C# will have a fit)
+        {
+            tempMeshVerticesArray[j] = tempVerticesList[j];
+        }
+        mesh.vertices = tempMeshVerticesArray;
+
+
+        for (int i = 1; i < loopCount + 1; i++)
+        {
+            for (int k = 0; k < baseTriangles.Length; k++)
+            {
+                // tempTriangles[indexCount] = baseTriangles[k] + (4 * (i - 1));
+                //indexCount++;
+                tempTrianglesList.Add(baseTriangles[k] + (4 * (i - 1)));
+            }
+        }
+
+        int[] tempTrianglesArray = new int[tempTrianglesList.Count];
+
+        for (int i = 0; i < tempTrianglesList.Count; i++)
+        {
+            tempTrianglesArray[i] = tempTrianglesList[i];
+        }
+        mesh.triangles = tempTrianglesArray;
+
+
+
+        GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
+        meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
+
+        meshObject.GetComponent<MeshFilter>().mesh = mesh;
+        meshObject.GetComponent<MeshCollider>().sharedMesh = mesh;
+
+        mesh.RecalculateNormals();
+
+        loopCount = 0;
     }
 
     private void DeleteWorld()
@@ -253,8 +301,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
 
 
-        int loopCount = 0;
-        List<Vector3> tempVerticesList = new List<Vector3>();
+        //int loopCount = 0;
+        //List<Vector3> tempVerticesList = new List<Vector3>();
         bool quadAdded = false; // Has there been anything added to the mesh?
 
         for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
@@ -287,31 +335,63 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 };      
                 */
                 quadAdded = true;
+                Vector3[] veryTempVertices = new Vector3[verticesBack.Length];
 
                 if (i == 0)
                 {
-                    tempVerticesList.AddRange(verticesBack);
+                    for (int u=0; u<verticesBack.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesBack[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
                 else if (i == 1)
                 {
-                    tempVerticesList.AddRange(verticesFront);
+                    for (int u = 0; u < verticesFront.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesFront[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
                 else if (i == 2)
                 {
-                    tempVerticesList.AddRange(verticesRight);
+                    for (int u = 0; u < verticesRight.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesRight[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
                 else if (i == 3)
                 {
-                    tempVerticesList.AddRange(verticesLeft);
+                    for (int u = 0; u < verticesLeft.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesLeft[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
                 else if (i == 4)
                 {
-                    tempVerticesList.AddRange(verticesUp);
+                    for (int u = 0; u < verticesUp.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesUp[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
                 else if (i == 5)
                 {
-                    tempVerticesList.AddRange(verticesDown);
+                    for (int u = 0; u < verticesDown.Length; u++)
+                    {
+                        veryTempVertices[u] = verticesDown[u] + blockPosition;
+                    }
+
+                    tempVerticesList.AddRange(veryTempVertices);
                 }
+
 
                 loopCount++;
 
@@ -322,12 +402,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         if (quadAdded)
         {
 
-            Mesh mesh = new Mesh();
-            GameObject meshObject = Instantiate(emtpyMeshPrefab, blockPosition+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
-            meshObject.transform.parent = chunkEmptyObject;
-            meshObject.GetComponent<MeshFilter>().mesh = mesh;
+            //Mesh mesh = new Mesh();
+            //GameObject meshObject = Instantiate(emtpyMeshPrefab, blockPosition+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
+            //meshObject.transform.parent = chunkEmptyObject;
+            //meshObject.GetComponent<MeshFilter>().mesh = mesh;
 
             // Create vertices:
+            /*
             Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount];
 
             for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array (it's stupid but it must be done manually otherwise C# will have a fit)
@@ -335,26 +416,26 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 tempMeshVerticesArray[j] = tempVerticesList[j];
             }
 
-            mesh.vertices = tempMeshVerticesArray;
-
+            mesh.vertices[mesh.vertices.Length] = tempMeshVerticesArray[i];
+            
+            */
+            //mesh.vertices = tempMeshVerticesArray;
 
             // Create triangles:
-            int[] tempTriangles = new int[6 * loopCount];
-            int indexCount = 0;
+            //int[] tempTriangles = new int[6 * loopCount];
+           // int indexCount = 0;
             // (all vertices use the same triangles, (baseTriangles), I just need to increment the values)
-            for (int i = 1; i < loopCount + 1; i++)
+
+            /*
+            for (int i=0; i<tempTriangles.Length; i++)
             {
-                for (int k = 0; k < baseTriangles.Length; k++)
-                {
-                    tempTriangles[indexCount] = baseTriangles[k] + (4 * (i - 1));
-                    indexCount++;
-                }
+                mesh.triangles[mesh.triangles.Length] = tempTriangles[i];
             }
+            */
+            //mesh.triangles = tempTriangles;
 
-            mesh.triangles = tempTriangles;
 
-
-            mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
+            //mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
         }
 
 
