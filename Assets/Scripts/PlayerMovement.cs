@@ -9,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
 
     public float speed = 12f;
     public float gravity = -9.81f;
+    public float jumpHeight = 2f;
 
     public Transform groundCheck;
     public float groundDistance = 0.4f;
@@ -17,15 +18,18 @@ public class PlayerMovement : MonoBehaviour
     Vector3 velocity;
     bool isGrounded;
 
-    // Start is called before the first frame update
+    public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+
+    // LateStart is called after the other Start() methods in other scripts, and therefore after the world has been generated
     void Start()
     {
-        
+        transform.position = new Vector3(0, perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0)), 0);
     }
 
     // Update is called once per frame
     void Update()
     {
+
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
         if (isGrounded && velocity.y < 0)
@@ -40,9 +44,17 @@ public class PlayerMovement : MonoBehaviour
 
         controller.Move(move * speed * Time.deltaTime);
 
+        // jumping velocity: v=sqrt(h*-2*g)
+        if (Input.GetButton("Jump") && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
         // Gravity: (note - change in y=(1/2)g*t*t)
         velocity.y += gravity * Time.deltaTime;
 
         controller.Move(velocity * Time.deltaTime);
+
+
     }
 }

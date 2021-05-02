@@ -20,7 +20,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public int noiseScale;
 
-    public Vector2 perlinOffset; // The offset in which we search the perlin noise at (seed)
+    public Vector2Int perlinOffset; // The offset in which we search the perlin noise at (seed)
+    public bool randomSeed;
 
     private int chunkNameCounter = 0;
 
@@ -104,8 +105,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
 
-    private void Start()
+    private void Awake()
     {
+
+        if (randomSeed)
+        {
+            perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
+            noiseScale = Random.Range(2, 6);
+        }
         
         chunks = new Dictionary<Vector2Int, GameObject>();
         blockTypes = new Dictionary<Vector3Int, int>();
@@ -193,7 +200,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                for (int y=0; y<yCord+1; y++)
+                for (int y=0; y<heightLimit; y++) // change this back to y<yCord+1 once I'm done testing out floating blocks! ---------------------------------------------------------------------------------------------------------------------
                 {
                     if (blockTypes[new Vector3Int(xCord, y, zCord)] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
@@ -231,7 +238,26 @@ public class PerlinNoiseGenerator : MonoBehaviour
         }
         mesh.triangles = tempTrianglesArray;
 
+        
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+        for (int i=0; i<uvs.Length; i=i+4)
+        {
+            uvs[0+i] = new Vector2(0+i, 1+i); //top-left
+            uvs[1+i] = new Vector2(1+i, 1+i); //top-right
+            uvs[2+i] = new Vector2(1+i, 0+i); //bottom-left
+            uvs[3+i] = new Vector2(0+i, 0+i); //bottom-right
+        }
 
+        mesh.uv = uvs;
+        
+        /*
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+        for (int i=0; i<uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(mesh.vertices[i].x, mesh.vertices[i].z);
+        }
+        mesh.uv = uvs;
+        */
 
         GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
         meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
@@ -289,7 +315,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
         }
 
-        //chunkEmptyObject.position = new Vector3(chunkX * chunkSize, chunkEmptyObject.position.y, chunkZ * chunkSize);
+        blockTypes[new Vector3Int(0, GetSurfaceHeight(new Vector2Int(0, 0)) + 2, 0)] = 1;
 
         // Increment this ready for the next chunk to be generated
         chunkNameCounter++;
@@ -337,7 +363,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 quadAdded = true;
                 Vector3[] veryTempVertices = new Vector3[verticesBack.Length];
 
-                if (i == 0)
+                if (i == 0) // verticesBack
                 {
                     for (int u=0; u<verticesBack.Length; u++)
                     {
@@ -346,7 +372,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                     tempVerticesList.AddRange(veryTempVertices);
                 }
-                else if (i == 1)
+                else if (i == 1) // verticesFront
                 {
                     for (int u = 0; u < verticesFront.Length; u++)
                     {
@@ -355,7 +381,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                     tempVerticesList.AddRange(veryTempVertices);
                 }
-                else if (i == 2)
+                else if (i == 2) // verticesRight
                 {
                     for (int u = 0; u < verticesRight.Length; u++)
                     {
@@ -364,7 +390,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                     tempVerticesList.AddRange(veryTempVertices);
                 }
-                else if (i == 3)
+                else if (i == 3) // verticesLeft
                 {
                     for (int u = 0; u < verticesLeft.Length; u++)
                     {
@@ -373,7 +399,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                     tempVerticesList.AddRange(veryTempVertices);
                 }
-                else if (i == 4)
+                else if (i == 4) // verticesUp
                 {
                     for (int u = 0; u < verticesUp.Length; u++)
                     {
@@ -382,7 +408,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                     tempVerticesList.AddRange(veryTempVertices);
                 }
-                else if (i == 5)
+                else if (i == 5) // verticesDown
                 {
                     for (int u = 0; u < verticesDown.Length; u++)
                     {
@@ -452,6 +478,20 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         return Mathf.Clamp(sample, 0, 1); // Sometimes perlin noise can return a value outside of the [0, 1] range. Weird right? Mathf.Clamp() fixes that
 
+    }
+
+    // Find the y cord of the surface at x,z (for spawning entites on the surface)
+    public int GetSurfaceHeight(Vector2Int positionToGet)
+    {
+        // Search through each y block at x,z until we find the surface
+        for (int i=0; i<heightLimit; i++)
+        {
+            if (blockTypes[new Vector3Int(positionToGet.x, i, positionToGet.y)] == 0) // If it is air
+            {
+                return i;
+            }
+        }
+        return heightLimit;
     }
 
 
