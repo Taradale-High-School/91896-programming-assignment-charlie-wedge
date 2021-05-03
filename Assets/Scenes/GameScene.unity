@@ -151,7 +151,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 2
   m_Height: 1
-  m_Radius: 0.5
+  m_Radius: 0.2
   m_SlopeLimit: 45
   m_StepOffset: 1
   m_SkinWidth: 0.08
@@ -632,20 +632,19 @@ MonoBehaviour:
   perlinTextureSizeX: 256
   perlinTextureSizeY: 256
   worldHeightScale: 40
-  playerChunkPosX: 0
-  playerChunkPosZ: 0
   heightLimit: 50
   chunkSize: 16
   renderDistance: 3
   noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
-  randomSeed: 1
+  randomSeed: 0
   worldParent: {fileID: 2076992686}
   chunkParent: {fileID: 4940573995945565891, guid: 0fefa12b8dcb243caa262beb1dc7b5ca,
     type: 3}
   emtpyMeshPrefab: {fileID: 5172422349473617331, guid: 1917d5d25ea859f4e8fb880d40906254,
     type: 3}
   player: {fileID: 889489485}
+  playerChunkPosition: {x: 0, y: 0}
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0

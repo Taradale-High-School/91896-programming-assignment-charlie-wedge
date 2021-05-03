@@ -10,9 +10,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public float worldHeightScale;
 
-    public int playerChunkPosX;
-    public int playerChunkPosZ;
-
     public int heightLimit;
 
     public int chunkSize;
@@ -38,7 +35,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private int loopCount = 0;
 
     public Transform player;
-    private Vector2Int playerChunkPosition;
+    public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
     private Vector2Int previousPlayerChunkPosition;
 
     // The offsets which make up all the blocks around a block, (for generating quads)
@@ -115,7 +112,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         if (randomSeed)
         {
             perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
-            noiseScale = Random.Range(2, 6);
+            noiseScale = Random.Range(3, 6);
         }
         
         chunks = new Dictionary<Vector2Int, GameObject>();
@@ -129,19 +126,21 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private void Start()
     {
-        previousPlayerChunkPosition = new Vector2Int(10, 70);
+        previousPlayerChunkPosition = new Vector2Int(0, 0);
     }
 
 
     // Update is called once per frame
     void Update()
     {
-        Vector2Int playerChunkPosition = new Vector2Int(Mathf.FloorToInt(player.position.x/chunkSize), Mathf.FloorToInt(player.position.z/chunkSize)); // Work out which chunk the player is currently on
+        playerChunkPosition = new Vector2Int(Mathf.FloorToInt(player.position.x/chunkSize), Mathf.FloorToInt(player.position.z/chunkSize)); // Work out which chunk the player is currently on
         
         // put chunk loading and unloading code in here
 
         if (playerChunkPosition != previousPlayerChunkPosition) // If the player has moved into another chunk...
         {
+            print("You have moved into chunk " + playerChunkPosition);
+
 
         }
 
@@ -207,6 +206,21 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ)
     {
+        // Check if this chunk is already loaded. If so, return and therefore don't load it.
+        Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
+        if (chunks.ContainsKey(chunkPositionVector))
+        {
+            if (chunks[chunkPositionVector].transform.childCount > 0)
+            {
+                if (chunks[chunkPositionVector].transform.GetChild(0).gameObject.activeSelf)
+                {
+                    return;
+                }
+            }
+
+        }
+
+
         mesh = new Mesh();
         tempVerticesList = new List<Vector3>();
         tempTrianglesList = new List<int>();
@@ -297,9 +311,25 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     }
 
-    // Do everything required to generate a chunk at x,z
+    // Do everything required to generate a chunk at x,z based on the player's current position
     private void GenerateChunk(int chunkX, int chunkZ)
     {
+        // Check if this chunk is already loaded. If so, return and therefore don't load it.
+        Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
+        if (chunks.ContainsKey(chunkPositionVector))
+        {
+            if (chunks[chunkPositionVector].transform.childCount > 0) { 
+                if (chunks[chunkPositionVector].transform.GetChild(0).gameObject.activeSelf)
+                {
+                    return;
+                }
+            }
+
+        }
+
+        chunkX += playerChunkPosition.x;
+        chunkZ += playerChunkPosition.y;
+
         Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation); // Instantiate the empty chunk object in which this chunk's cubes will be placed in
         chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name to make it neat
         chunks[new Vector2Int(chunkX, chunkZ)] = chunkEmptyObject.gameObject; // Add the chunk object to the chunks array for reference later on when adding blocks
