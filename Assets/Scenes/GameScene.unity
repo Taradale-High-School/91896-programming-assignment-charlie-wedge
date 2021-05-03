@@ -636,7 +636,7 @@ MonoBehaviour:
   playerChunkPosZ: 0
   heightLimit: 50
   chunkSize: 16
-  renderDistance: 5
+  renderDistance: 3
   noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
   randomSeed: 1
@@ -645,6 +645,7 @@ MonoBehaviour:
     type: 3}
   emtpyMeshPrefab: {fileID: 5172422349473617331, guid: 1917d5d25ea859f4e8fb880d40906254,
     type: 3}
+  player: {fileID: 889489485}
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0

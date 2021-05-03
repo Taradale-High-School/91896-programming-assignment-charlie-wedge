@@ -37,6 +37,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private List<int> tempTrianglesList;
     private int loopCount = 0;
 
+    public Transform player;
+    private Vector2Int playerChunkPosition;
+    private Vector2Int previousPlayerChunkPosition;
+
     // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
     {
@@ -123,11 +127,25 @@ public class PerlinNoiseGenerator : MonoBehaviour
         
     }
 
+    private void Start()
+    {
+        previousPlayerChunkPosition = new Vector2Int(10, 70);
+    }
+
 
     // Update is called once per frame
     void Update()
     {
+        Vector2Int playerChunkPosition = new Vector2Int(Mathf.FloorToInt(player.position.x/chunkSize), Mathf.FloorToInt(player.position.z/chunkSize)); // Work out which chunk the player is currently on
+        
+        // put chunk loading and unloading code in here
 
+        if (playerChunkPosition != previousPlayerChunkPosition) // If the player has moved into another chunk...
+        {
+
+        }
+
+        previousPlayerChunkPosition = playerChunkPosition;
 
     }
 
@@ -135,7 +153,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void GenerateWorld()
     {
 
-        GenerateChunk(0, 0); // The center chunk, (which the player spawns on)
+        GenerateChunk(playerChunkPosition.x, playerChunkPosition.y); // The center chunk, (which the player spawns on)
 
         // let r=current renderDistance 'outline' to spawn
         for (int r = 1; r < renderDistance; r++) // For every 'outline'...
@@ -145,16 +163,16 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
                 if (r == i && r > 0)
                 {
-                    GenerateChunk(-i, -r);
+                    GenerateChunk(-i + playerChunkPosition.x, -r+playerChunkPosition.y);
                 }
                 else
                 {
-                    GenerateChunk(i, r);
+                    GenerateChunk(i + playerChunkPosition.x, r + playerChunkPosition.y);
                 }
 
-                GenerateChunk(r, i);
-                GenerateChunk(-r, i);
-                GenerateChunk(i, -r);
+                GenerateChunk(r + playerChunkPosition.x, i + playerChunkPosition.y);
+                GenerateChunk(-r + playerChunkPosition.x, i + playerChunkPosition.y);
+                GenerateChunk(i + playerChunkPosition.x, -r + playerChunkPosition.y);
             }
         }
 
@@ -169,16 +187,16 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
                 if (r == i && r > 0)
                 {
-                    GenerateMeshForChunk(-i, -r);
+                    GenerateMeshForChunk(-i+playerChunkPosition.x, -r + playerChunkPosition.y);
                 }
                 else
                 {
-                    GenerateMeshForChunk(i, r);
+                    GenerateMeshForChunk(i + playerChunkPosition.x, r + playerChunkPosition.y);
                 }
 
-                GenerateMeshForChunk(r, i);
-                GenerateMeshForChunk(-r, i);
-                GenerateMeshForChunk(i, -r);
+                GenerateMeshForChunk(r + playerChunkPosition.x, i + playerChunkPosition.y);
+                GenerateMeshForChunk(-r + playerChunkPosition.x, i + playerChunkPosition.y);
+                GenerateMeshForChunk(i + playerChunkPosition.x, -r + playerChunkPosition.y);
             }
         }
 
