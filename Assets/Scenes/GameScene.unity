@@ -635,6 +635,7 @@ MonoBehaviour:
   heightLimit: 50
   chunkSize: 16
   renderDistance: 3
+  emptyChunkDistance: 1
   noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
   randomSeed: 0

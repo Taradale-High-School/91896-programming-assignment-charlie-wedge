@@ -14,6 +14,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public int chunkSize;
     public int renderDistance;
+    public int emptyChunkDistance; // The amount of values in the renderDistance variable which will not have their mesh generated, just their data
 
     public int noiseScale;
 
@@ -37,6 +38,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public Transform player;
     public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
     private Vector2Int previousPlayerChunkPosition;
+
+    private float timeSinceLastWorldUpdate = 0f;
 
     // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
@@ -109,6 +112,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void Awake()
     {
 
+        if (renderDistance-emptyChunkDistance <= 0)
+        {
+            Debug.LogWarning("emptyChunkDistance cancels out renderDistance. This may result in weird behaviour with chunk meshes being generated.");
+        }
+
         if (randomSeed)
         {
             perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
@@ -140,17 +148,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
         if (playerChunkPosition != previousPlayerChunkPosition) // If the player has moved into another chunk...
         {
             print("You have moved into chunk " + playerChunkPosition);
-
-
+            GenerateWorld();
+            
         }
 
         previousPlayerChunkPosition = playerChunkPosition;
 
     }
+    // Reload the world by only loading in chunks which have not yet been loaded in (for when the player moves chunk)
+    private void ReloadWorld()
+    {
+
+    }
+
 
     // Call this function when generating the world for the first time
     private void GenerateWorld()
     {
+        timeSinceLastWorldUpdate = Time.realtimeSinceStartup;
 
         GenerateChunk(playerChunkPosition.x, playerChunkPosition.y); // The center chunk, (which the player spawns on)
 
@@ -179,7 +194,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         GenerateMeshForChunk(0, 0); // The center chunk, (which the player spawns on)
 
         // let r=current renderDistance 'outline' to spawn
-        for (int r = 1; r < renderDistance; r++) // For every 'outline'...
+        for (int r = 1; r < renderDistance-emptyChunkDistance; r++) // For every 'outline'...
         {
             for (int i = -(r - 1); i < r + 1; i++) // Basiclly spawns every chunk in the 'outline'
             {
@@ -199,7 +214,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
         }
 
-        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunk" + ((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) == 1 ? "" : "s") + " in " + Time.realtimeSinceStartup + " seconds!\n(" + Time.realtimeSinceStartup/((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1))) + " seconds per chunk!)");
+        timeSinceLastWorldUpdate = Time.realtimeSinceStartup - timeSinceLastWorldUpdate;
+        print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunk" + ((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) == 1 ? "" : "s") + " in " + timeSinceLastWorldUpdate + " seconds!\n(" + timeSinceLastWorldUpdate/((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1))) + " seconds per chunk!)");
         //Debug.Break();
     }
 
@@ -219,6 +235,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
 
         }
+        // There is no chunk located in x,z, therefore it will be generated!
 
 
         mesh = new Mesh();
@@ -314,11 +331,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // Do everything required to generate a chunk at x,z based on the player's current position
     private void GenerateChunk(int chunkX, int chunkZ)
     {
+
+
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
         if (chunks.ContainsKey(chunkPositionVector))
         {
-            if (chunks[chunkPositionVector].transform.childCount > 0) { 
+            if (chunks[chunkPositionVector].transform.childCount > 0) 
+            { 
                 if (chunks[chunkPositionVector].transform.GetChild(0).gameObject.activeSelf)
                 {
                     return;
@@ -327,8 +347,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         }
 
-        chunkX += playerChunkPosition.x;
-        chunkZ += playerChunkPosition.y;
 
         Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation); // Instantiate the empty chunk object in which this chunk's cubes will be placed in
         chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name to make it neat
@@ -363,7 +381,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
         }
 
-        blockTypes[new Vector3Int(0, GetSurfaceHeight(new Vector2Int(0, 0)) + 2, 0)] = 1;
+        blockTypes[new Vector3Int(playerChunkPosition.x, GetSurfaceHeight(new Vector2Int(0, 0)) + 2, playerChunkPosition.y)] = 1;
 
         // Increment this ready for the next chunk to be generated
         chunkNameCounter++;
@@ -373,11 +391,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // Generate a mesh for the given block
     private void GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject)
     {
-
-
-        //int loopCount = 0;
-        //List<Vector3> tempVerticesList = new List<Vector3>();
-        bool quadAdded = false; // Has there been anything added to the mesh?
 
         for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
         {
@@ -408,7 +421,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     new Vector3Int(0, -1, 0)
                 };      
                 */
-                quadAdded = true;
                 Vector3[] veryTempVertices = new Vector3[verticesBack.Length];
 
                 if (i == 0) // verticesBack
@@ -473,45 +485,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
         }
-        if (quadAdded)
-        {
-
-            //Mesh mesh = new Mesh();
-            //GameObject meshObject = Instantiate(emtpyMeshPrefab, blockPosition+emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
-            //meshObject.transform.parent = chunkEmptyObject;
-            //meshObject.GetComponent<MeshFilter>().mesh = mesh;
-
-            // Create vertices:
-            /*
-            Vector3[] tempMeshVerticesArray = new Vector3[4 * loopCount];
-
-            for (int j = 0; j < tempVerticesList.Count; j++) // Manually add each element from the tempVerticesList<> list to the tempMeshVerticesArray[] array (it's stupid but it must be done manually otherwise C# will have a fit)
-            {
-                tempMeshVerticesArray[j] = tempVerticesList[j];
-            }
-
-            mesh.vertices[mesh.vertices.Length] = tempMeshVerticesArray[i];
-            
-            */
-            //mesh.vertices = tempMeshVerticesArray;
-
-            // Create triangles:
-            //int[] tempTriangles = new int[6 * loopCount];
-           // int indexCount = 0;
-            // (all vertices use the same triangles, (baseTriangles), I just need to increment the values)
-
-            /*
-            for (int i=0; i<tempTriangles.Length; i++)
-            {
-                mesh.triangles[mesh.triangles.Length] = tempTriangles[i];
-            }
-            */
-            //mesh.triangles = tempTriangles;
-
-
-            //mesh.RecalculateNormals(); // Fixes the weird lighting that the mesh will have
-        }
-
 
     }
 
