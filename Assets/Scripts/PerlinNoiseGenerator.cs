@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
 
 public class PerlinNoiseGenerator : MonoBehaviour
 {
@@ -149,8 +150,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             print("You have moved into chunk " + playerChunkPosition);
             GenerateWorld();
-            
-        }
+
+    }
 
         previousPlayerChunkPosition = playerChunkPosition;
 
