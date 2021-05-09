@@ -633,9 +633,10 @@ MonoBehaviour:
   perlinTextureSizeY: 256
   worldHeightScale: 40
   heightLimit: 50
-  chunkSize: 2
-  renderDistance: 18
+  chunkSize: 16
+  renderDistance: 3
   emptyChunkDistance: 1
+  chunkSpawnRate: 0.5
   noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
   randomSeed: 0
