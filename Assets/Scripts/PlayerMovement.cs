@@ -24,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         //transform.position = new Vector3(0, perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0)), 0);'
-        transform.position = new Vector3(0, 150, 0);
+        transform.position = new Vector3(0, 50, 0);
     }
 
     // Update is called once per frame

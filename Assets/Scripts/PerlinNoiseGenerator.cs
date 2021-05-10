@@ -247,6 +247,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes)
     {
+        Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize-1), 0, chunkZ * (chunkSize-1));
+
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
         if (chunks.ContainsKey(chunkPositionVector))
@@ -276,9 +278,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
                 for (int y = 0; y < heightLimit; y++) // change this back to y<yCord+1 once I'm done testing out floating blocks! ---------------------------------------------------------------------------------------------------------------------
                 {
-                    if (blockTypes[xCord, y, zCord] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
+                    if (blockTypes[x, y, z] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
-                        GenerateMesh(new Vector3Int(xCord, y, zCord), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
+                        GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
                     }
                 }
             }
@@ -310,7 +312,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         mesh.uv = uvs;
 
 
-        GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position, emtpyMeshPrefab.transform.rotation); // Create a block object
+        GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a block object
         meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
 
         meshObject.GetComponent<MeshFilter>().mesh = mesh;
@@ -359,24 +361,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
         // Go through every possible block in this chunk to both spawn them and give them their respective values
-        for (int x = 0; x < chunkSize; x++)
+        for (int x = 0; x < chunkSize-1; x++)
         {
-            for (int z = 0; z < chunkSize; z++)
+            for (int z = 0; z < chunkSize-1; z++)
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale); // yCord = Surface
-
-                blockTypes[xCord, yCord, zCord] = 1; // Set every block on the surface to grass (1 = grass)
+                //print(new Vector3Int(x, yCord, z));
+                blockTypes[x, yCord, z] = 1; // Set every block on the surface to grass (1 = grass)
 
                 for (int y = 0; y < yCord; y++) // Set every block below the surface to stone
                 {
-                    blockTypes[xCord, y, zCord] = 2; // 2 = stone
+                    blockTypes[x, y, z] = 2; // 2 = stone
                 }
 
                 for (int y = yCord + 1; y < heightLimit; y++) // Set every block above the surface to air
                 {
-                    blockTypes[xCord, y, zCord] = 0; // 0 = air
+                    blockTypes[x, y, z] = 0; // 0 = air
                 }
 
 
@@ -385,7 +387,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
         }
 
 
-        chunkEmptyObject.GetComponent<Chunks>().StoreBlockTypes(blockTypes);
+        Chunks chunkScriptTemp = chunkEmptyObject.GetComponent<Chunks>();
+        chunkScriptTemp.StoreBlockTypes(blockTypes);
 
         blockTypes[playerChunkPosition.x, GetSurfaceHeight(new Vector2Int(0, 0), blockTypes) + 2, playerChunkPosition.y] = 1; // The single block above the player's head when they spawn - delete this once the game is finished
 
@@ -409,8 +412,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
             Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i]; // The adjacent block to search
             int finalBlockTypeValue;
 
-            if (blockToSearch.x < 16 && blockToSearch.y < heightLimit && blockToSearch.z < chunkSize) // If the block exists in this chunk (has been generated)
+            if (blockToSearch.x < chunkSize-1 && blockToSearch.y < heightLimit-1 && blockToSearch.z < chunkSize-1 && blockToSearch.x >= 0 && blockToSearch.y >=0 && blockToSearch.z >= 0) // If the block exists in this chunk (has been generated)
             {
+                //print(blockToSearch);
                 finalBlockTypeValue = blockTypes[blockToSearch.x, blockToSearch.y, blockToSearch.z];
             }
             else
