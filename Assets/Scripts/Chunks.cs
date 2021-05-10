@@ -25,6 +25,11 @@ public class Chunks : MonoBehaviour
 
     }
 
+    public int[,,] GetBlockTypes()
+    {
+        return blockTypes;
+    }
+
 
 }
 
