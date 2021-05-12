@@ -636,7 +636,7 @@ MonoBehaviour:
   chunkSize: 16
   renderDistance: 12
   emptyChunkDistance: 1
-  chunkSpawnRate: 0.5
+  chunkSpawnRate: 0.01
   noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
   randomSeed: 0

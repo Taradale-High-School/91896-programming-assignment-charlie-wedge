@@ -193,19 +193,21 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             for (int i = -(r - 1); i < r + 1; i++) // Basiclly spawns every chunk in the 'outline'
             {
+                bool generateMesh = !(r == renderDistance-1);
+               
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
                 if (r == i && r > 0)
                 {
-                    CreateChunk(-i + playerChunkPosition.x, -r + playerChunkPosition.y, true, instant);
+                    CreateChunk(-i + playerChunkPosition.x, -r + playerChunkPosition.y, generateMesh, instant);
                 }
                 else
                 {
-                    CreateChunk(i + playerChunkPosition.x, r + playerChunkPosition.y, true, instant);
+                    CreateChunk(i + playerChunkPosition.x, r + playerChunkPosition.y, generateMesh, instant);
                 }
 
-                CreateChunk(r + playerChunkPosition.x, i + playerChunkPosition.y, true, instant);
-                CreateChunk(-r + playerChunkPosition.x, i + playerChunkPosition.y, true, instant);
-                CreateChunk(i + playerChunkPosition.x, -r + playerChunkPosition.y, true, instant);
+                CreateChunk(r + playerChunkPosition.x, i + playerChunkPosition.y, generateMesh, instant);
+                CreateChunk(-r + playerChunkPosition.x, i + playerChunkPosition.y, generateMesh, instant);
+                CreateChunk(i + playerChunkPosition.x, -r + playerChunkPosition.y, generateMesh, instant);
             }
         }
         /*
@@ -390,7 +392,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         Chunks chunkScriptTemp = chunkEmptyObject.GetComponent<Chunks>();
         chunkScriptTemp.StoreBlockTypes(blockTypes);
 
-        blockTypes[playerChunkPosition.x, GetSurfaceHeight(new Vector2Int(0, 0), blockTypes) + 2, playerChunkPosition.y] = 1; // The single block above the player's head when they spawn - delete this once the game is finished
+       // blockTypes[playerChunkPosition.x, GetSurfaceHeight(new Vector2Int(0, 0), blockTypes) + 2, playerChunkPosition.y] = 1; // The single block above the player's head when they spawn - delete this once the game is finished
 
         // Increment this ready for the next chunk to be generated
         chunkNameCounter++;
