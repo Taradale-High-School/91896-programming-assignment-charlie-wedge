@@ -320,10 +320,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
         meshObject.GetComponent<MeshFilter>().mesh = mesh;
         meshObject.GetComponent<MeshCollider>().sharedMesh = mesh;
 
+        meshObject.transform.parent.gameObject.GetComponent<Chunks>().meshGenerated = true;
+
         mesh.RecalculateNormals();
 
         loopCount = 0;
     }
+
+    
 
     private void DeleteWorld()
     {
@@ -343,11 +347,16 @@ public class PerlinNoiseGenerator : MonoBehaviour
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
         if (chunks.ContainsKey(chunkPositionVector))
         {
-            if (chunks[chunkPositionVector].transform.childCount > 0)
+            GameObject chunkObject = chunks[chunkPositionVector];
+            if (chunkObject.transform.childCount > 0)
             {
-                if (chunks[chunkPositionVector].transform.GetChild(0).gameObject.activeSelf)
+                if (chunkObject.transform.GetChild(0).gameObject.activeSelf)
                 {
-                    return;
+                    if (chunkObject.GetComponent<Chunks>().meshGenerated)
+                    {
+                        return;
+                    }   
+                    
                 }
             }
 
