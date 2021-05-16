@@ -278,7 +278,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                for (int y = 0; y < heightLimit; y++) // change this back to y<yCord+1 once I'm done testing out floating blocks! ---------------------------------------------------------------------------------------------------------------------
+                for (int y = 0; y < yCord+1; y++) // change this to y<heightLimit if I'm testing out/using floating blocks (blocks above the surface)
                 {
                     if (blockTypes[x, y, z] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
@@ -430,7 +430,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
             else
             {
-                finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
+                finalBlockTypeValue = 0; // -1 = don't generate a quad since it will most likely be facing outside of the world
             }
 
             if (finalBlockTypeValue == 0) // Is there air next to me on i side? If so, I need to generate a quad for that side
