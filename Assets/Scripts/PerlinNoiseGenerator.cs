@@ -47,6 +47,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private float timeSinceLastWorldUpdate = 0f;
 
+    private List<string> currentlyLoadedChunks; // The name (which are ints) of each chunk which we want currently loaded into our game
+
     // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
     {
@@ -186,6 +188,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         timeSinceLastWorldUpdate = Time.realtimeSinceStartup;
 
+        currentlyLoadedChunks = new List<string>();
+
         CreateChunk(playerChunkPosition.x, playerChunkPosition.y, true, instant); // The center chunk, (which the player spawns on)
 
         // let r=current renderDistance 'outline' to spawn
@@ -210,6 +214,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 CreateChunk(i + playerChunkPosition.x, -r + playerChunkPosition.y, generateMesh, instant);
             }
         }
+
+        UnloadChunks();
         /*
         // Later on in this game's development, this code will be upgraded to only spawn meshes in chunks which are visible to the player:
         AskToGenerateMesh(0, 0, instant); // The center chunk, (which the player spawns on)
@@ -244,6 +250,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
         }
 
         //Debug.Break();
+    }
+
+    private void UnloadChunks()
+    {
+        for (int i=0; i<worldParent.childCount; i++) // Go through every chunk currently loaded
+        {
+            if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name)))
+            {
+                print("Destorying chunk " + worldParent.GetChild(i).name);
+                chunks.Remove(new Vector2Int(worldParent.GetChild(i).position)
+                Destroy(worldParent.GetChild(i).gameObject);
+            }
+        }
+    }
+
+    private Vector2Int CalculateChunkPosition(Transform chunkTransform) // Calculate the position of a chunk based on it's position on the world
+    {
+        return new Vector2Int((chunkTransform.position.x+0.5f)/chunkSize, (chunkTransform.position.z + 0.5f) / chunkSize);
     }
 
     // This function generates the meshes for each block in the chunk specified
@@ -342,7 +366,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private void CreateChunk(int chunkX, int chunkZ, bool generateMesh, bool instant)
     {
 
-
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
         if (chunks.ContainsKey(chunkPositionVector))
@@ -354,6 +377,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 {
                     if (chunkObject.GetComponent<Chunks>().meshGenerated)
                     {
+                        currentlyLoadedChunks.Add(chunkObject.name);
                         return;
                     }   
                     
@@ -366,6 +390,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         Transform chunkEmptyObject = Instantiate(chunkParent, chunkParent.position, chunkParent.rotation); // Instantiate the empty chunk object in which this chunk's cubes will be placed in
         chunkEmptyObject.name = chunkNameCounter.ToString(); // Set it's name to make it neat
+        currentlyLoadedChunks.Add(chunkNameCounter.ToString());
         chunks[new Vector2Int(chunkX, chunkZ)] = chunkEmptyObject.gameObject; // Add the chunk object to the chunks array for reference later on when adding blocks
 
         chunkEmptyObject.parent = worldParent;
