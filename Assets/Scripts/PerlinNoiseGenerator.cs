@@ -256,18 +256,27 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         for (int i=0; i<worldParent.childCount; i++) // Go through every chunk currently loaded
         {
-            if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name)))
+            if (worldParent.GetChild(i).name != "0") // Do not unload the center chunk
             {
-                print("Destorying chunk " + worldParent.GetChild(i).name);
-                chunks.Remove(new Vector2Int(worldParent.GetChild(i).position)
-                Destroy(worldParent.GetChild(i).gameObject);
+                if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name)))
+                {
+                   // print("Destorying chunk " + worldParent.GetChild(i).name);
+                    chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
+                    Destroy(worldParent.GetChild(i).gameObject);
+                }
             }
+
         }
     }
 
     private Vector2Int CalculateChunkPosition(Transform chunkTransform) // Calculate the position of a chunk based on it's position on the world
     {
-        return new Vector2Int((chunkTransform.position.x+0.5f)/chunkSize, (chunkTransform.position.z + 0.5f) / chunkSize);
+        if (chunkTransform.childCount > 0)
+        {
+            Vector3 chunkWorldPosition = chunkTransform.GetChild(0).position;
+            print((Mathf.RoundToInt((chunkWorldPosition.x + 0.5f) / chunkSize), Mathf.RoundToInt((chunkWorldPosition.z + 0.5f) / chunkSize)));
+            return new Vector2Int(Mathf.RoundToInt((chunkWorldPosition.x + 0.5f) / chunkSize), Mathf.RoundToInt((chunkWorldPosition.z + 0.5f) / chunkSize));
+        }
     }
 
     // This function generates the meshes for each block in the chunk specified
