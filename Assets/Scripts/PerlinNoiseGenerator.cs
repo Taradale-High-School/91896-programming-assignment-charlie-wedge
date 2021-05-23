@@ -41,6 +41,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private List<int> tempTrianglesList;
     private int loopCount = 0;
 
+    private Vector2[] blockIDs;
+
     public Transform player;
     public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
     private Vector2Int previousPlayerChunkPosition;
@@ -137,6 +139,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
         toGeneratePosition = new List<Vector2Int>();
         toGenerateChunksScript = new List<int[,,]>();
 
+        blockIDs = new Vector2[]
+        {
+            new Vector2(2, 15), // 0 - dirt
+            new Vector2(3, 15), // 1 - grass side
+            new Vector2(1, 15) // 2 - stone
+        };
+
         chunkNameCounter = 0;
 
         GenerateWorld(true);
@@ -152,7 +161,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        playerChunkPosition = new Vector2Int(Mathf.FloorToInt(player.position.x / chunkSize), Mathf.FloorToInt(player.position.z / chunkSize)); // Work out which chunk the player is currently on
+        playerChunkPosition = new Vector2Int(Mathf.CeilToInt(player.position.x / chunkSize), Mathf.CeilToInt(player.position.z / chunkSize)); // Work out which chunk the player is currently on
 
         // put chunk loading and unloading code in here
 
@@ -177,8 +186,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
         }
         else
         {
-            toGeneratePosition.Add(new Vector2Int(x, y));
-            toGenerateChunksScript.Add(blockTypes);
+            if (!toGeneratePosition.Contains(new Vector2Int(x, y)))
+            {
+                toGeneratePosition.Add(new Vector2Int(x, y));
+                toGenerateChunksScript.Add(blockTypes);
+            }
         }
     }
 
@@ -197,7 +209,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             for (int i = -(r - 1); i < r + 1; i++) // Basiclly spawns every chunk in the 'outline'
             {
-                bool generateMesh = !(r == renderDistance - 1);
+                bool generateMesh = !(r == renderDistance - 1); // true if it's not a chunk in the outer 'ring'
 
                 // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
                 if (r == i && r > 0)
@@ -258,14 +270,15 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             if (worldParent.GetChild(i).name != "0") // Do not unload the center chunk
             {
-                if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name)))
+                if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name))) // Check the currentlyLoadedChunks list to check if this chunk should be unloaded (if it's not in the list it should be unloaded)
                 {
-                    if (worldParent.GetChild(i).childCount > 0)
+                    if (worldParent.GetChild(i).childCount > 0) // No need to unload chunks which don't even have a mesh object
                     {
                         // print("Destorying chunk " + worldParent.GetChild(i).name);
                        // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
                        // Destroy(worldParent.GetChild(i).gameObject);
                         worldParent.GetChild(i).gameObject.SetActive(false);
+                        worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
                     }
                 }
 
@@ -291,15 +304,23 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
+        //print("Chunk " + chunks[chunkPositionVector].name + ": active = " + chunks[chunkPositionVector].activeSelf + ", meshVisible = " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
         if (chunks.ContainsKey(chunkPositionVector))
         {
             if (chunks[chunkPositionVector].transform.childCount > 0)
             {
-                return;
-                if (chunks[chunkPositionVector].transform.GetChild(0).gameObject.activeSelf)
+                //return;
+                //print("Outside & " + chunks[chunkPositionVector]);
+               // print(chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                if (!chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible)
                 {
-                    return;
+                   // print("Setting chunk " + chunks[chunkPositionVector].name + " active! " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                    chunks[chunkPositionVector].SetActive(true);
+                  //  print("Is it active?: " + chunks[chunkPositionVector].activeSelf + ", " + chunks[chunkPositionVector].activeInHierarchy);
+                    chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible = true;
                 }
+                return;
+                
             }
 
         }
@@ -310,6 +331,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
         tempVerticesList = new List<Vector3>();
         tempTrianglesList = new List<int>();
 
+        List<Vector2> uvsList = new List<Vector2>();
+        float tileOffset = 1f / 16f; // 0.0625
+
         for (int x = 0; x < chunkSize; x++) // For every block x
         {
             for (int z = 0; z < chunkSize; z++) // For every block z
@@ -319,9 +343,28 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
                 for (int y = 0; y < yCord + 1; y++) // change this to y<heightLimit if I'm testing out/using floating blocks (blocks above the surface)
                 {
-                    if (blockTypes[x, y, z] != 0) // Only attempt to draw meshes on this block if it's actually a block! (not air)
+                    if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
-                        GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
+                        int faceCount = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
+
+                        Vector2 uvBlockVector2 = blockIDs[blockTypes[x, y, z]];
+                        float ublock = uvBlockVector2.x;
+                        float vblock = uvBlockVector2.y;
+                        float umin = tileOffset * ublock;
+                        float umax = tileOffset * (ublock + 1f);
+                        float vmin = tileOffset * vblock;
+                        float vmax = tileOffset * (vblock + 1f);
+                        // Add to the uvs array:
+                        for (int i = 0; i < faceCount; i++) // For every block face in the chunk (mesh)
+                        {
+
+                            uvsList.Add(new Vector2(umin, vmax)); //top-left
+                            uvsList.Add(new Vector2(umax, vmax)); //top-right
+                            uvsList.Add(new Vector2(umax, vmin)); //bottom-left
+                            uvsList.Add(new Vector2(umin, vmin)); //bottom-right
+
+                        }
+
                     }
                 }
             }
@@ -341,17 +384,41 @@ public class PerlinNoiseGenerator : MonoBehaviour
         mesh.triangles = tempTrianglesList.ToArray();
 
 
-        Vector2[] uvs = new Vector2[mesh.vertices.Length];
-        for (int i = 0; i < uvs.Length; i = i + 4)
-        {
-            uvs[0 + i] = new Vector2(0 + i, 1 + i); //top-left
-            uvs[1 + i] = new Vector2(1 + i, 1 + i); //top-right
-            uvs[2 + i] = new Vector2(1 + i, 0 + i); //bottom-left
-            uvs[3 + i] = new Vector2(0 + i, 0 + i); //bottom-right
-        }
+        // UV Stuff:
+        // Vector2[] uvs = new Vector2[mesh.vertices.Length];
 
+        //float ublock = 7f;
+        //float vblock = 4f;
+
+        //float tileOffset = 1f / 16f; // 0.0625
+
+
+        //print("umin = " + umin + "\numax = " + umax + "\nvmin = " + vmin + "\nvmax = " + vmax + "\ntileOffset = " + tileOffset);
+        /*
+        for (int i = 0; i < uvs.Length; i = i + 4) // For every block face in the chunk (mesh)
+        {
+            float ublock = blockTypes
+            float umin = tileOffset * ublock;
+            float umax = tileOffset * (ublock + 1f);
+            float vmin = tileOffset * vblock;
+            float vmax = tileOffset * (vblock + 1f);
+
+            uvs[0 + i] = new Vector2(umin + i, vmax + i); //top-left
+            uvs[1 + i] = new Vector2(umax + i, vmax + i); //top-right
+            uvs[2 + i] = new Vector2(umax + i, vmin + i); //bottom-left
+            uvs[3 + i] = new Vector2(umin + i, vmin + i); //bottom-right
+
+        }
+        */
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+        uvs = uvsList.ToArray();
         mesh.uv = uvs;
 
+
+        
+        //
+        
+        
 
         GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a block object
         meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
@@ -360,6 +427,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         meshObject.GetComponent<MeshCollider>().sharedMesh = mesh;
 
         meshObject.transform.parent.gameObject.GetComponent<Chunks>().meshGenerated = true;
+        meshObject.transform.parent.gameObject.GetComponent<Chunks>().meshVisible = true;
 
         mesh.RecalculateNormals();
 
@@ -386,17 +454,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
         if (chunks.ContainsKey(chunkPositionVector))
         {
             GameObject chunkObject = chunks[chunkPositionVector];
-            if (chunkObject.transform.childCount > 0)
+            if (chunkObject.transform.childCount > 0) // Has a mesh object been created?
             {
-                if (chunkObject.transform.GetChild(0).gameObject.activeSelf)
+                if (chunkObject.activeSelf) // is the mesh object actually visible?
                 {
                     if (chunkObject.GetComponent<Chunks>().meshGenerated)
                     {
                         currentlyLoadedChunks.Add(chunkObject.name);
                         return;
                     }
-
+                
                 }
+                else
+                {
+                    currentlyLoadedChunks.Add(chunkObject.name);
+                    AskToGenerateMesh(chunkX, chunkZ, instant, chunkObject.GetComponent<Chunks>().GetBlockTypes());
+                    return;
+                }
+                
             }
 
         }
@@ -429,7 +504,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                 for (int y = yCord + 1; y < heightLimit; y++) // Set every block above the surface to air
                 {
-                    blockTypes[x, y, z] = 0; // 0 = air
+                    blockTypes[x, y, z] = -1; // -1 = air
                 }
 
 
@@ -454,9 +529,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
     }
 
     // Generate a mesh for the given block
-    private void GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes)
+    private int GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes)
     {
-
+        int faceCount = 0;
         for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
         {
 
@@ -470,10 +545,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
             }
             else
             {
-                finalBlockTypeValue = 0; // -1 = don't generate a quad since it will most likely be facing outside of the world
+                finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
             }
 
-            if (finalBlockTypeValue == 0) // Is there air next to me on i side? If so, I need to generate a quad for that side
+            if (finalBlockTypeValue == -1) // Is there air next to me on i side? If so, I need to generate a quad for that side
             {
 
                 /* COPYED FROM TOP OF SCRIPT:
@@ -547,11 +622,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
                 loopCount++;
+                faceCount++;
 
             }
 
 
         }
+        return faceCount;
 
     }
 

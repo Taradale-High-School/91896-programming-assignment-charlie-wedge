@@ -5,12 +5,20 @@ using UnityEngine;
 public class Chunks : MonoBehaviour
 {
     private int[,,] blockTypes;
+
     public bool meshGenerated;
+    public bool meshVisible;
 
     // Start is called before the first frame update
     void Awake()
     {
         meshGenerated = false;
+        meshVisible = false;
+    }
+
+    private void Start()
+    {
+       
     }
 
     // Update is called once per frame

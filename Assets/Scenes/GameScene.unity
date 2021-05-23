@@ -165,7 +165,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 889489483}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11, y: 30, z: 2}
+  m_LocalPosition: {x: 0, y: 30, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1288358062}
@@ -636,10 +636,10 @@ MonoBehaviour:
   chunkSize: 16
   renderDistance: 12
   emptyChunkDistance: 1
-  chunkSpawnRate: 0.01
-  noiseScale: 5
+  chunkSpawnRate: 0
+  noiseScale: 15
   perlinOffset: {x: 1000, y: 1000}
-  randomSeed: 1
+  randomSeed: 0
   worldParent: {fileID: 2076992686}
   chunkParent: {fileID: 4940573995945565891, guid: 0fefa12b8dcb243caa262beb1dc7b5ca,
     type: 3}
