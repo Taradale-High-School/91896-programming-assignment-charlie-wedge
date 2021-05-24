@@ -637,7 +637,7 @@ MonoBehaviour:
   renderDistance: 12
   emptyChunkDistance: 1
   chunkSpawnRate: 0
-  noiseScale: 15
+  noiseScale: 5
   perlinOffset: {x: 1000, y: 1000}
   randomSeed: 1
   worldParent: {fileID: 2076992686}

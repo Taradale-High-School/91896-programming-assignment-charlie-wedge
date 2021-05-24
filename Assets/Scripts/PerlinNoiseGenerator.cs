@@ -41,8 +41,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private List<int> tempTrianglesList;
     private int loopCount = 0;
 
-    private Vector2[] blockIDs;
-
     public Transform player;
     public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
     private Vector2Int previousPlayerChunkPosition;
@@ -50,6 +48,28 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private float timeSinceLastWorldUpdate = 0f;
 
     private List<string> currentlyLoadedChunks; // The name (which are ints) of each chunk which we want currently loaded into our game
+
+    private int[] blockIDIndexOffsetLocations =
+    {
+        1, 1, 1, 1, 0, 2
+    };
+
+    // The UV position of each block in the texture atlas
+    private Vector2[] blockIDs = {
+        // 0 - dirt:
+        new Vector2(2, 15), // top
+        new Vector2(2, 15), // sides
+        new Vector2(2, 15), // bottom
+        // 1 - grass:
+        new Vector2(0, 15), // grass top
+        new Vector2(3, 15), // grass side
+        new Vector2(2, 15), // dirt
+        // 2 - stone:
+        new Vector2(1, 15),
+        new Vector2(1, 15),
+        new Vector2(1, 15)
+    };
+
 
     // The offsets which make up all the blocks around a block, (for generating quads)
     private Vector3Int[] adjacentBlocksOffsets =
@@ -138,13 +158,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         //blockTypes = new Dictionary<Vector3Int, int>();
         toGeneratePosition = new List<Vector2Int>();
         toGenerateChunksScript = new List<int[,,]>();
-
-        blockIDs = new Vector2[]
-        {
-            new Vector2(2, 15), // 0 - dirt
-            new Vector2(3, 15), // 1 - grass side
-            new Vector2(1, 15) // 2 - stone
-        };
 
         chunkNameCounter = 0;
 
@@ -275,8 +288,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     if (worldParent.GetChild(i).childCount > 0) // No need to unload chunks which don't even have a mesh object
                     {
                         // print("Destorying chunk " + worldParent.GetChild(i).name);
-                       // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
-                       // Destroy(worldParent.GetChild(i).gameObject);
+                        // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
+                        // Destroy(worldParent.GetChild(i).gameObject);
                         worldParent.GetChild(i).gameObject.SetActive(false);
                         worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
                     }
@@ -300,7 +313,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes)
     {
-        Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize - 1), 0, chunkZ * (chunkSize - 1));
+        Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize - 0), 0, chunkZ * (chunkSize - 0));
 
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
@@ -311,16 +324,16 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 //return;
                 //print("Outside & " + chunks[chunkPositionVector]);
-               // print(chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                // print(chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
                 if (!chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible)
                 {
-                   // print("Setting chunk " + chunks[chunkPositionVector].name + " active! " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                    // print("Setting chunk " + chunks[chunkPositionVector].name + " active! " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
                     chunks[chunkPositionVector].SetActive(true);
-                  //  print("Is it active?: " + chunks[chunkPositionVector].activeSelf + ", " + chunks[chunkPositionVector].activeInHierarchy);
+                    //  print("Is it active?: " + chunks[chunkPositionVector].activeSelf + ", " + chunks[chunkPositionVector].activeInHierarchy);
                     chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible = true;
                 }
                 return;
-                
+
             }
 
         }
@@ -345,24 +358,62 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 {
                     if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
-                        int faceCount = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
+                        List<int> verticesOrder = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
 
-                        Vector2 uvBlockVector2 = blockIDs[blockTypes[x, y, z]];
-                        float ublock = uvBlockVector2.x;
-                        float vblock = uvBlockVector2.y;
-                        float umin = tileOffset * ublock;
-                        float umax = tileOffset * (ublock + 1f);
-                        float vmin = tileOffset * vblock;
-                        float vmax = tileOffset * (vblock + 1f);
+
                         // Add to the uvs array:
-                        for (int i = 0; i < faceCount; i++) // For every block face in the chunk (mesh)
+                        for (int i = 0; i < verticesOrder.Count; i++) // For every block face in the chunk (mesh)
                         {
+                            Vector2 uvBlockVector2 = blockIDs[(blockTypes[x, y, z] * 3) + blockIDIndexOffsetLocations[verticesOrder[i]]];
+                            float ublock = uvBlockVector2.x;
+                            float vblock = uvBlockVector2.y;
+                            float umin = tileOffset * ublock;
+                            float umax = tileOffset * (ublock + 1f);
+                            float vmin = tileOffset * vblock;
+                            float vmax = tileOffset * (vblock + 1f);
 
-                            uvsList.Add(new Vector2(umin, vmax)); //top-left
-                            uvsList.Add(new Vector2(umax, vmax)); //top-right
-                            uvsList.Add(new Vector2(umax, vmin)); //bottom-left
-                            uvsList.Add(new Vector2(umin, vmin)); //bottom-right
+                            if (verticesOrder[i] == 1)
+                            {
+                                // POSITIVE Z / DEFAULT:
+                                uvsList.Add(new Vector2(umin, vmax)); //top-left
+                                uvsList.Add(new Vector2(umax, vmax)); //top-right
+                                uvsList.Add(new Vector2(umax, vmin)); //bottom-right
+                                uvsList.Add(new Vector2(umin, vmin)); //bottom-left
+                            }
+                            else if (verticesOrder[i] == 3)
+                            {
+                                // POSITIVE X:
+                                uvsList.Add(new Vector2(umax, vmax)); //top-right
+                                uvsList.Add(new Vector2(umax, vmin)); //bottom-right
+                                uvsList.Add(new Vector2(umin, vmin)); //bottom-left
+                                uvsList.Add(new Vector2(umin, vmax)); //top-left
+                            }
 
+                            else if (verticesOrder[i] == 0)
+                            {
+                                // NEGATIVE Z:
+                                uvsList.Add(new Vector2(umin, vmax)); //top-left
+                                uvsList.Add(new Vector2(umin, vmin)); //bottom-left
+                                uvsList.Add(new Vector2(umax, vmin)); //bottom-right
+                                uvsList.Add(new Vector2(umax, vmax)); //top-right
+                            }
+                            else if (verticesOrder[i] == 2)
+                            {
+                                // NEGATIVE X:
+                                uvsList.Add(new Vector2(umax, vmax)); //top-right
+                                uvsList.Add(new Vector2(umin, vmax)); //top-left
+                                uvsList.Add(new Vector2(umin, vmin)); //bottom-left
+                                uvsList.Add(new Vector2(umax, vmin)); //bottom-right
+                            }
+                            else
+                            {
+                                // POSITIVE Z / DEFAULT:
+                                uvsList.Add(new Vector2(umin, vmax)); //top-left
+                                uvsList.Add(new Vector2(umax, vmax)); //top-right
+                                uvsList.Add(new Vector2(umax, vmin)); //bottom-right
+                                uvsList.Add(new Vector2(umin, vmin)); //bottom-left
+                            }
+                            
                         }
 
                     }
@@ -415,10 +466,10 @@ public class PerlinNoiseGenerator : MonoBehaviour
         mesh.uv = uvs;
 
 
-        
+
         //
-        
-        
+
+
 
         GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a block object
         meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
@@ -463,7 +514,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                         currentlyLoadedChunks.Add(chunkObject.name);
                         return;
                     }
-                
+
                 }
                 else
                 {
@@ -471,7 +522,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     AskToGenerateMesh(chunkX, chunkZ, instant, chunkObject.GetComponent<Chunks>().GetBlockTypes());
                     return;
                 }
-                
+
             }
 
         }
@@ -529,9 +580,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
     }
 
     // Generate a mesh for the given block
-    private int GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes)
+    private List<int> GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes)
     {
-        int faceCount = 0;
+        List<int> verticesOrderList = new List<int>();
         for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
         {
 
@@ -622,13 +673,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
                 loopCount++;
-                faceCount++;
+                verticesOrderList.Add(i);
 
             }
 
 
         }
-        return faceCount;
+        return verticesOrderList;
 
     }
 
