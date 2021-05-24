@@ -38,6 +38,11 @@ public class Chunks : MonoBehaviour
         return blockTypes;
     }
 
+    public void EditBlockTypes(Vector3Int blockToEdit, int idToSet)
+    {
+        blockTypes[blockToEdit.x, blockToEdit.y, blockToEdit.z] = idToSet;
+    }
+
 
 }
 

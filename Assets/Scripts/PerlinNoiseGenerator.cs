@@ -30,7 +30,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public Transform chunkParent;
     public GameObject emtpyMeshPrefab;
 
-    private Dictionary<Vector2Int, GameObject> chunks; // Keeps track of each chunk empty object
+    public Dictionary<Vector2Int, GameObject> chunks; // Keeps track of each chunk empty object
                                                        //  private Dictionary<Vector3Int, int> blockTypes; // Keeps track of each block type
 
     private List<Vector2Int> toGeneratePosition; // the chunks which need to be generated (doing it this way saves on performance)

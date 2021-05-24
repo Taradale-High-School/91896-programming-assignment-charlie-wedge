@@ -10,6 +10,8 @@ public class MouseLook : MonoBehaviour
 
     float xRotation = 0f;
 
+    public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -36,6 +38,30 @@ public class MouseLook : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.X))
         {
             Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        // Mouse presses: (breaking and placing blocks)
+        if (Input.GetMouseButtonDown(0))
+        {
+           // print("Mouse pressed!");
+
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(new Vector3(0, 0, 0));
+
+            if (Physics.Raycast(ray, out hit)) // Send a raycast, and output the mesh info it hits throught the hit variable. Only returns through if it hits a block
+            {
+                //print(hit.point);
+
+                int chunkSize = perlinNoiseGeneratorScript.chunkSize;
+                Vector3Int blockWorldPosition = new Vector3Int(Mathf.FloorToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.FloorToInt(hit.point.z));
+                Vector2Int chunkPosition = new Vector2Int(Mathf.CeilToInt(blockWorldPosition.x / chunkSize), Mathf.CeilToInt(blockWorldPosition.z / chunkSize));
+                Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
+
+                print("Block position = " + blockLocalPosition);
+                print("Chunk position = " + chunkPosition);
+
+                perlinNoiseGeneratorScript.chunks[chunkPosition].GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
+            }
         }
     }
 }

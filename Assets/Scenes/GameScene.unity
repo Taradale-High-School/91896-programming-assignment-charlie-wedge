@@ -373,6 +373,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mouseSensitivity: 100
   playerBody: {fileID: 889489485}
+  perlinNoiseGeneratorScript: {fileID: 2098694374}
 --- !u!1 &1421774290
 GameObject:
   m_ObjectHideFlags: 0
@@ -634,7 +635,7 @@ MonoBehaviour:
   worldHeightScale: 40
   heightLimit: 50
   chunkSize: 16
-  renderDistance: 12
+  renderDistance: 6
   emptyChunkDistance: 1
   chunkSpawnRate: 0
   noiseScale: 5
