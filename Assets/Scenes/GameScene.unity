@@ -639,7 +639,7 @@ MonoBehaviour:
   chunkSpawnRate: 0
   noiseScale: 15
   perlinOffset: {x: 1000, y: 1000}
-  randomSeed: 0
+  randomSeed: 1
   worldParent: {fileID: 2076992686}
   chunkParent: {fileID: 4940573995945565891, guid: 0fefa12b8dcb243caa262beb1dc7b5ca,
     type: 3}

@@ -487,9 +487,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
         // Go through every possible block in this chunk to both spawn them and give them their respective values
-        for (int x = 0; x < chunkSize - 1; x++)
+        for (int x = 0; x < chunkSize; x++)
         {
-            for (int z = 0; z < chunkSize - 1; z++)
+            for (int z = 0; z < chunkSize; z++)
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
