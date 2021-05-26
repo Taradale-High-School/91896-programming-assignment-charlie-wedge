@@ -53,14 +53,17 @@ public class MouseLook : MonoBehaviour
                 //print(hit.point);
 
                 int chunkSize = perlinNoiseGeneratorScript.chunkSize;
-                Vector3Int blockWorldPosition = new Vector3Int(Mathf.FloorToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.FloorToInt(hit.point.z));
-                Vector2Int chunkPosition = new Vector2Int(Mathf.CeilToInt(blockWorldPosition.x / chunkSize), Mathf.CeilToInt(blockWorldPosition.z / chunkSize));
+                Vector3Int blockWorldPosition = new Vector3Int(Mathf.RoundToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.RoundToInt(hit.point.z));
+                Vector2Int chunkPosition = new Vector2Int(Mathf.RoundToInt(blockWorldPosition.x / chunkSize), Mathf.RoundToInt(blockWorldPosition.z / chunkSize));
                 Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
 
                 print("Block position = " + blockLocalPosition);
                 print("Chunk position = " + chunkPosition);
 
-                perlinNoiseGeneratorScript.chunks[chunkPosition].GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
+                GameObject chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition];
+                chunkObject.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
+
+                perlinNoiseGeneratorScript.ReloadChunk(chunkObject, chunkPosition.x, chunkPosition.y);
             }
         }
     }
