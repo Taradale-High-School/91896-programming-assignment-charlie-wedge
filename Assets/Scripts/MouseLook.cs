@@ -53,20 +53,30 @@ public class MouseLook : MonoBehaviour
                 //print(hit.point);
 
                 int chunkSize = perlinNoiseGeneratorScript.chunkSize;
+<<<<<<< HEAD
                 Vector3Int blockWorldPosition = new Vector3Int(Mathf.RoundToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.RoundToInt(hit.point.z));
                 Transform chunkObject = hit.transform;
                 Vector2Int chunkPosition = new Vector2Int(Mathf.FloorToInt(blockWorldPosition.x / chunkSize), Mathf.FloorToInt(blockWorldPosition.z / chunkSize));
                 // Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
                 //Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x - (chunkSize*chunkPosition.x)+1), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z - (chunkSize * chunkPosition.y)+1));
                 Vector3Int blockLocalPosition = new Vector3Int(Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.x - (chunkObject.position.x * chunkSize))), Mathf.FloorToInt(chunkObject.position.y), Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.z - (chunkObject.position.z * chunkSize))));
+=======
+                Vector3Int blockWorldPosition = new Vector3Int(Mathf.FloorToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.FloorToInt(hit.point.z));
+                Vector2Int chunkPosition = new Vector2Int(Mathf.CeilToInt(blockWorldPosition.x / chunkSize), Mathf.CeilToInt(blockWorldPosition.z / chunkSize));
+                Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
+>>>>>>> parent of f9f125b (Blocks can be broken, but offset is incorrect)
 
                 print("Block position = " + blockLocalPosition);
                 print("Chunk position = " + chunkPosition);
 
+<<<<<<< HEAD
                 //GameObject chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition];
                 chunkObject.parent.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
 
                 perlinNoiseGeneratorScript.ReloadChunk(chunkObject.gameObject, chunkPosition.x, chunkPosition.y);
+=======
+                perlinNoiseGeneratorScript.chunks[chunkPosition].GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
+>>>>>>> parent of f9f125b (Blocks can be broken, but offset is incorrect)
             }
         }
     }

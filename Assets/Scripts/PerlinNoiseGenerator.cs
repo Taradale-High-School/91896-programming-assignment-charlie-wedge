@@ -195,7 +195,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         if (instant)
         {
-            GenerateMeshForChunk(x, y, blockTypes, false);
+            GenerateMeshForChunk(x, y, blockTypes);
         }
         else
         {
@@ -277,12 +277,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
         //Debug.Break();
     }
 
-    public void ReloadChunk(GameObject chunkObject, int chunkX, int chunkZ)
-    {
-        GenerateMeshForChunk(chunkX, chunkZ, chunkObject.GetComponent<Chunks>().GetBlockTypes(), true);
-    }
-
-
     private void UnloadChunks()
     {
         for (int i = 0; i < worldParent.childCount; i++) // Go through every chunk currently loaded
@@ -317,41 +311,36 @@ public class PerlinNoiseGenerator : MonoBehaviour
     }
 
     // This function generates the meshes for each block in the chunk specified
-    private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes, bool reloading)
+    private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes)
     {
+<<<<<<< HEAD
         //print("Generating a mesh for chunk " + new Vector2Int(chunkX, chunkZ));
+=======
+>>>>>>> parent of f9f125b (Blocks can be broken, but offset is incorrect)
         Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize - 0), 0, chunkZ * (chunkSize - 0));
 
         // Check if this chunk is already loaded. If so, return and therefore don't load it.
         Vector2Int chunkPositionVector = new Vector2Int(chunkX, chunkZ);
         //print("Chunk " + chunks[chunkPositionVector].name + ": active = " + chunks[chunkPositionVector].activeSelf + ", meshVisible = " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
-        if (!reloading)
+        if (chunks.ContainsKey(chunkPositionVector))
         {
-            if (chunks.ContainsKey(chunkPositionVector))
+            if (chunks[chunkPositionVector].transform.childCount > 0)
             {
-                if (chunks[chunkPositionVector].transform.childCount > 0)
+                //return;
+                //print("Outside & " + chunks[chunkPositionVector]);
+                // print(chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                if (!chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible)
                 {
-                    //return;
-                    //print("Outside & " + chunks[chunkPositionVector]);
-                    // print(chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
-                    if (!chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible)
-                    {
-                        // print("Setting chunk " + chunks[chunkPositionVector].name + " active! " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
-                        chunks[chunkPositionVector].SetActive(true);
-                        //  print("Is it active?: " + chunks[chunkPositionVector].activeSelf + ", " + chunks[chunkPositionVector].activeInHierarchy);
-                        chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible = true;
-                    }
-                    return;
-
+                    // print("Setting chunk " + chunks[chunkPositionVector].name + " active! " + chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible);
+                    chunks[chunkPositionVector].SetActive(true);
+                    //  print("Is it active?: " + chunks[chunkPositionVector].activeSelf + ", " + chunks[chunkPositionVector].activeInHierarchy);
+                    chunks[chunkPositionVector].GetComponent<Chunks>().meshVisible = true;
                 }
+                return;
 
             }
-        }
-        else // If we are reloading the chunk
-        {
 
         }
-
         // There is no chunk located in x,z, therefore it will be generated!
 
 
@@ -450,24 +439,44 @@ public class PerlinNoiseGenerator : MonoBehaviour
         mesh.triangles = tempTrianglesList.ToArray();
 
 
+        // UV Stuff:
+        // Vector2[] uvs = new Vector2[mesh.vertices.Length];
 
+        //float ublock = 7f;
+        //float vblock = 4f;
+
+        //float tileOffset = 1f / 16f; // 0.0625
+
+
+        //print("umin = " + umin + "\numax = " + umax + "\nvmin = " + vmin + "\nvmax = " + vmax + "\ntileOffset = " + tileOffset);
+        /*
+        for (int i = 0; i < uvs.Length; i = i + 4) // For every block face in the chunk (mesh)
+        {
+            float ublock = blockTypes
+            float umin = tileOffset * ublock;
+            float umax = tileOffset * (ublock + 1f);
+            float vmin = tileOffset * vblock;
+            float vmax = tileOffset * (vblock + 1f);
+
+            uvs[0 + i] = new Vector2(umin + i, vmax + i); //top-left
+            uvs[1 + i] = new Vector2(umax + i, vmax + i); //top-right
+            uvs[2 + i] = new Vector2(umax + i, vmin + i); //bottom-left
+            uvs[3 + i] = new Vector2(umin + i, vmin + i); //bottom-right
+
+        }
+        */
         Vector2[] uvs = new Vector2[mesh.vertices.Length];
         uvs = uvsList.ToArray();
         mesh.uv = uvs;
 
 
-        GameObject meshObject;
-        GameObject chunkObject;
-        chunkObject = chunks[new Vector2Int(chunkX, chunkZ)];
-        if (reloading)
-        {
-            meshObject = chunkObject.transform.GetChild(0).gameObject;
-        }
-        else
-        {
-            meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a chunk object for the mesh to be applied too
-            meshObject.transform.parent = chunkObject.transform;
-        }
+
+        //
+
+
+
+        GameObject meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a block object
+        meshObject.transform.parent = chunks[new Vector2Int(chunkX, chunkZ)].transform;
 
         meshObject.GetComponent<MeshFilter>().mesh = mesh;
         meshObject.GetComponent<MeshCollider>().sharedMesh = mesh;
@@ -709,7 +718,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     {
         while (toGeneratePosition.Count > 0)
         {
-            GenerateMeshForChunk(toGeneratePosition[0].x, toGeneratePosition[0].y, toGenerateChunksScript[0], false);
+            GenerateMeshForChunk(toGeneratePosition[0].x, toGeneratePosition[0].y, toGenerateChunksScript[0]);
             toGeneratePosition.RemoveAt(0);
             toGenerateChunksScript.RemoveAt(0);
 
