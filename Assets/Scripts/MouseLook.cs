@@ -54,17 +54,19 @@ public class MouseLook : MonoBehaviour
 
                 int chunkSize = perlinNoiseGeneratorScript.chunkSize;
                 Vector3Int blockWorldPosition = new Vector3Int(Mathf.RoundToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.RoundToInt(hit.point.z));
+                Transform chunkObject = hit.transform;
                 Vector2Int chunkPosition = new Vector2Int(Mathf.FloorToInt(blockWorldPosition.x / chunkSize), Mathf.FloorToInt(blockWorldPosition.z / chunkSize));
                 // Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
-                Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x - (chunkSize*chunkPosition.x)+1), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z - (chunkSize * chunkPosition.y)+1));
+                //Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x - (chunkSize*chunkPosition.x)+1), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z - (chunkSize * chunkPosition.y)+1));
+                Vector3Int blockLocalPosition = new Vector3Int(Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.x - (chunkObject.position.x * chunkSize))), Mathf.FloorToInt(chunkObject.position.y), Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.z - (chunkObject.position.z * chunkSize))));
 
                 print("Block position = " + blockLocalPosition);
                 print("Chunk position = " + chunkPosition);
 
-                GameObject chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition];
-                chunkObject.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
+                //GameObject chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition];
+                chunkObject.parent.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
 
-                perlinNoiseGeneratorScript.ReloadChunk(chunkObject, chunkPosition.x, chunkPosition.y);
+                perlinNoiseGeneratorScript.ReloadChunk(chunkObject.gameObject, chunkPosition.x, chunkPosition.y);
             }
         }
     }
