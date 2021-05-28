@@ -319,7 +319,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes, bool reloading)
     {
-        print("Generating a mesh for chunk " + new Vector2Int(chunkX, chunkZ));
+        //print("Generating a mesh for chunk " + new Vector2Int(chunkX, chunkZ));
         Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize - 0), 0, chunkZ * (chunkSize - 0));
 
         // Check if this chunk is already loaded. If so, return and therefore don't load it.

@@ -54,8 +54,9 @@ public class MouseLook : MonoBehaviour
 
                 int chunkSize = perlinNoiseGeneratorScript.chunkSize;
                 Vector3Int blockWorldPosition = new Vector3Int(Mathf.RoundToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.RoundToInt(hit.point.z));
-                Vector2Int chunkPosition = new Vector2Int(Mathf.RoundToInt(blockWorldPosition.x / chunkSize), Mathf.RoundToInt(blockWorldPosition.z / chunkSize));
-                Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
+                Vector2Int chunkPosition = new Vector2Int(Mathf.FloorToInt(blockWorldPosition.x / chunkSize), Mathf.FloorToInt(blockWorldPosition.z / chunkSize));
+                // Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
+                Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x - (chunkSize*chunkPosition.x)+1), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z - (chunkSize * chunkPosition.y)+1));
 
                 print("Block position = " + blockLocalPosition);
                 print("Chunk position = " + chunkPosition);
