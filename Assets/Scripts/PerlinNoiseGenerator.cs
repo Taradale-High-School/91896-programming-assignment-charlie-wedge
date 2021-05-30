@@ -67,7 +67,23 @@ public class PerlinNoiseGenerator : MonoBehaviour
         // 2 - stone:
         new Vector2(1, 15),
         new Vector2(1, 15),
-        new Vector2(1, 15)
+        new Vector2(1, 15),
+        // 3 - diamond:
+        new Vector2(8, 14),
+        new Vector2(8, 14),
+        new Vector2(8, 14),
+        // 4 - emerald:
+        new Vector2(9, 14),
+        new Vector2(9, 14),
+        new Vector2(9, 14),
+        // 5 - redstone:
+        new Vector2(10, 14),
+        new Vector2(10, 14),
+        new Vector2(10, 14),
+        // 6 - wooden planks:
+        new Vector2(4, 15),
+        new Vector2(4, 15),
+        new Vector2(4, 15)
     };
 
 
@@ -180,7 +196,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         if (playerChunkPosition != previousPlayerChunkPosition) // If the player has moved into another chunk...
         {
-            print("You have moved into chunk " + playerChunkPosition);
+            //print("You have moved into chunk " + playerChunkPosition);
             GenerateWorld(false);
             StopAllCoroutines();
             StartCoroutine(DelayBuildChunks());
@@ -369,7 +385,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
-                for (int y = 0; y < yCord + 1; y++) // change this to y<heightLimit if I'm testing out/using floating blocks (blocks above the surface)
+                for (int y = 0; y < heightLimit + 0; y++) // change this to y<heightLimit if I'm testing out/using floating blocks (blocks above the surface)
                 {
                     if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
@@ -467,6 +483,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             meshObject = Instantiate(emtpyMeshPrefab, emtpyMeshPrefab.transform.position + chunkOffset, emtpyMeshPrefab.transform.rotation); // Create a chunk object for the mesh to be applied too
             meshObject.transform.parent = chunkObject.transform;
+            meshObject.transform.parent.GetComponent<Chunks>().chunkPosition = new Vector2Int(chunkX, chunkZ);
         }
 
         meshObject.GetComponent<MeshFilter>().mesh = mesh;
@@ -552,7 +569,22 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 {
                     blockTypes[x, y, z] = -1; // -1 = air
                 }
+                /*
+                for (int y=0; y<5; y++)
+                {
+                    blockTypes[x, y, z] = 3; // 3 = dimaond
+                }
 
+                for (int y = 5; y < 10; y++)
+                {
+                    blockTypes[x, y, z] = 4; // 4 = emerald
+                }
+
+                for (int y = 10; y < 15; y++)
+                {
+                    blockTypes[x, y, z] = 5; // 5 = redstone
+                }
+                */
 
 
             }

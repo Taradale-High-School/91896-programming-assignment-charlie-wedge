@@ -5,6 +5,7 @@ using UnityEngine;
 public class Chunks : MonoBehaviour
 {
     private int[,,] blockTypes;
+    public Vector2Int chunkPosition; // Public as it's used by other scripts
 
     public bool meshGenerated;
     public bool meshVisible;

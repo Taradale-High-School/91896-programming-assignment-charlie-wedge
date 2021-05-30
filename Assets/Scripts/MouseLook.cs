@@ -12,6 +12,9 @@ public class MouseLook : MonoBehaviour
 
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
 
+    public int rayDistance; // Public so I can edit it in the editor
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -43,31 +46,76 @@ public class MouseLook : MonoBehaviour
         // Mouse presses: (breaking and placing blocks)
         if (Input.GetMouseButtonDown(0))
         {
-           // print("Mouse pressed!");
+            ShootRayCast(-1, true); // break
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            ShootRayCast(6, false); // place
+        }
+    }
 
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(new Vector3(0, 0, 0));
+    private void ShootRayCast(int blockChangeValue, bool findNormal)
+    {
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0f));
 
-            if (Physics.Raycast(ray, out hit)) // Send a raycast, and output the mesh info it hits throught the hit variable. Only returns through if it hits a block
+        int layerMask = 1 << 2;
+        layerMask = ~layerMask;
+
+
+        if (Physics.Raycast(ray, out hit, rayDistance, layerMask)) // Send a raycast, and output the mesh info it hits throught the hit variable. Only returns through if it hits a block
+        {
+            //print(hit.point);
+
+            int chunkSize = perlinNoiseGeneratorScript.chunkSize;
+            Vector3Int blockWorldPosition = new Vector3Int(Mathf.FloorToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.FloorToInt(hit.point.z));
+            Transform chunkObject = hit.transform;
+           // print(chunkObject.gameObject.name);
+            Vector2Int chunkPosition = chunkObject.parent.GetComponent<Chunks>().chunkPosition;
+            Vector3Int blockLocalPosition = new Vector3Int(Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).x), 0, chunkSize - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).y), 0, 50 - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).z), 0, chunkSize - 1));
+
+            //print("Block position = " + blockLocalPosition);
+            //print(hit.normal);
+            // print("Chunk position = " + chunkPosition);
+            int[,,] blockTypes = chunkObject.parent.GetComponent<Chunks>().GetBlockTypes();
+
+            Vector3Int normal = Vector3Int.FloorToInt(hit.normal);
+
+            if (findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] == -1)
             {
-                //print(hit.point);
 
-                int chunkSize = perlinNoiseGeneratorScript.chunkSize;
-                Vector3Int blockWorldPosition = new Vector3Int(Mathf.RoundToInt(hit.point.x), Mathf.FloorToInt(hit.point.y), Mathf.RoundToInt(hit.point.z));
-                Transform chunkObject = hit.transform;
-                Vector2Int chunkPosition = new Vector2Int(Mathf.FloorToInt(blockWorldPosition.x / chunkSize), Mathf.FloorToInt(blockWorldPosition.z / chunkSize));
-                // Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x % chunkSize), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z % chunkSize));
-                //Vector3Int blockLocalPosition = new Vector3Int(Mathf.Abs(blockWorldPosition.x - (chunkSize*chunkPosition.x)+1), blockWorldPosition.y, Mathf.Abs(blockWorldPosition.z - (chunkSize * chunkPosition.y)+1));
-                Vector3Int blockLocalPosition = new Vector3Int(Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.x - (chunkObject.position.x * chunkSize))), Mathf.FloorToInt(chunkObject.position.y), Mathf.FloorToInt(Mathf.Abs(blockWorldPosition.z - (chunkObject.position.z * chunkSize))));
-
-                print("Block position = " + blockLocalPosition);
-                print("Chunk position = " + chunkPosition);
-
-                //GameObject chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition];
-                chunkObject.parent.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, -1);
-
-                perlinNoiseGeneratorScript.ReloadChunk(chunkObject.gameObject, chunkPosition.x, chunkPosition.y);
+                blockLocalPosition = blockLocalPosition - normal;
             }
+            else if (!findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] != -1)
+            {
+                blockLocalPosition = blockLocalPosition + normal;
+                if (blockLocalPosition.x >= chunkSize || blockLocalPosition.x < 0 || blockLocalPosition.z >= chunkSize || blockLocalPosition.z < 0)
+                {
+                    chunkPosition = new Vector2Int(chunkPosition.x + normal.x, chunkPosition.y + normal.z);
+                    chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition].transform.GetChild(0);
+                    Vector3Int offset = new Vector3Int();
+                    if (normal.x == -1)
+                    {
+                        offset = new Vector3Int(chunkSize, 0, 0);
+                    }
+                    else if (normal.x == 1)
+                    {
+                        offset = new Vector3Int(-chunkSize, 0, 0);
+                    }
+                    else if (normal.z == -1)
+                    {
+                        offset = new Vector3Int(0, 0, chunkSize);
+                    }
+                    else if (normal.z == 1)
+                    {
+                        offset = new Vector3Int(0, 0, -chunkSize);
+                    }
+                    blockLocalPosition += offset;
+                }
+            }
+            chunkObject.parent.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, blockChangeValue);
+
+            perlinNoiseGeneratorScript.ReloadChunk(chunkObject.parent.gameObject, chunkPosition.x, chunkPosition.y);
         }
     }
 }
