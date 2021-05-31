@@ -42,9 +42,9 @@ public class MouseLook : MonoBehaviour
         {
             Cursor.lockState = CursorLockMode.Locked;
         }
-
+        print(Input.GetAxis("Left Trigger"));
         // Mouse presses: (breaking and placing blocks)
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || Input.GetAxis("Left Trigger") > 0)
         {
             ShootRayCast(-1, true); // break
         }
@@ -83,7 +83,6 @@ public class MouseLook : MonoBehaviour
 
             if (findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] == -1)
             {
-
                 blockLocalPosition = blockLocalPosition - normal;
             }
             else if (!findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] != -1)
