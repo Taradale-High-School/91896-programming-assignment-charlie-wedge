@@ -42,7 +42,7 @@ public class MouseLook : MonoBehaviour
         {
             Cursor.lockState = CursorLockMode.Locked;
         }
-        print(Input.GetAxis("Left Trigger"));
+        //print(Input.GetAxis("Left Trigger"));
         // Mouse presses: (breaking and placing blocks)
         if (Input.GetMouseButtonDown(0) || Input.GetAxis("Left Trigger") > 0)
         {

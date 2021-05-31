@@ -240,7 +240,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 bool generateMesh = !(r == renderDistance - 1); // true if it's not a chunk in the outer 'ring'
 
-                // For some reason math likes to exclude (negitive, negitive), so I must manually spawn that chunk ;(
+                // For some reason math likes to exclude (negative, negative), so I must manually spawn that chunk ;(
                 if (r == i && r > 0)
                 {
                     CreateChunk(-i + playerChunkPosition.x, -r + playerChunkPosition.y, generateMesh, instant);
@@ -335,6 +335,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes, bool reloading)
     {
+
         //print("Generating a mesh for chunk " + new Vector2Int(chunkX, chunkZ));
         Vector3Int chunkOffset = new Vector3Int(chunkX * (chunkSize - 0), 0, chunkZ * (chunkSize - 0));
 
@@ -370,6 +371,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         // There is no chunk located in x,z, therefore it will be generated!
 
+        // Get the Chunks script from all four chunks adjacent to this chunk. This is so later I can call GetSingleBlockType() on these scripts.
+        Chunks[] adjacentChunkScripts = new Chunks[4];
+        for (int i=0; i<4; i++)
+        {
+            print(new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z));
+            adjacentChunkScripts[i] = chunks[new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z)].GetComponent<Chunks>();
+        }
 
         mesh = new Mesh();
         tempVerticesList = new List<Vector3>();
@@ -389,7 +397,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 {
                     if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
-                        List<int> verticesOrder = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes); // Generate the mesh for that block
+
+                        
+                        List<int> verticesOrder = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes, adjacentChunkScripts); // Generate the mesh for that block
 
 
                         // Add to the uvs array:
@@ -595,7 +605,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     {
                         blockTypes[x, i, z] = 3; // 3 = bedrock
                     }
-                    else if (blockTypes[x, i, z] == -1 && Random.value > 0.8f) // If no bedrock is spawned at y=3 && 
+                    else if (blockTypes[x, i, z] == -1 && Random.value > 0.8f) // If no bedrock is spawned at y=3 && air it is being spawned at the surface (because the ground is super low), then have a 20% chance of spawning netherrack at at either y=1 &&|| y=2
                     {
                         blockTypes[x, i, z] = 4; // 4 = netherrack
                     }
@@ -628,7 +638,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     }
 
     // Generate a mesh for the given block
-    private List<int> GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes)
+    private List<int> GenerateMesh(Vector3Int blockPosition, Vector3Int chunkPosition, Transform chunkEmptyObject, int[,,] blockTypes, Chunks[] adjacentChunkScripts)
     {
         List<int> verticesOrderList = new List<int>();
         for (int i = 0; i < 6; i++) // For every adjacent block around this block, (six blocks)
@@ -637,6 +647,35 @@ public class PerlinNoiseGenerator : MonoBehaviour
             Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i]; // The adjacent block to search
             int finalBlockTypeValue;
 
+            if (!(blockToSearch.y > heightLimit))
+            {
+                if (blockToSearch.z > chunkSize - 1)
+                {
+                    finalBlockTypeValue = adjacentChunkScripts[0].GetSingleBlockType(new Vector3Int(blockToSearch.x, blockToSearch.y, 0));
+                }
+                else if (blockToSearch.z < 0)
+                {
+                    finalBlockTypeValue = adjacentChunkScripts[1].GetSingleBlockType(new Vector3Int(blockToSearch.x, blockToSearch.y, chunkSize - 1));
+                }
+                else if (blockToSearch.x > chunkSize - 1)
+                {
+                    finalBlockTypeValue = adjacentChunkScripts[2].GetSingleBlockType(new Vector3Int(0, blockToSearch.y, blockToSearch.z));
+                }
+                else if (blockToSearch.x < 0)
+                {
+                    finalBlockTypeValue = adjacentChunkScripts[3].GetSingleBlockType(new Vector3Int(chunkSize - 1, blockToSearch.y, blockToSearch.z));
+                }
+                else
+                {
+                    finalBlockTypeValue = blockTypes[blockToSearch.x, blockToSearch.y, blockToSearch.z];
+                }
+            }
+            else
+            {
+                finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
+            }
+
+            /*
             if (blockToSearch.x < chunkSize - 1 && blockToSearch.y < heightLimit - 1 && blockToSearch.z < chunkSize - 1 && blockToSearch.x >= 0 && blockToSearch.y >= 0 && blockToSearch.z >= 0) // If the block exists in this chunk (has been generated)
             {
                 //print(blockToSearch);
@@ -646,6 +685,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
             }
+            */
 
             if (finalBlockTypeValue == -1) // Is there air next to me on i side? If so, I need to generate a quad for that side
             {
