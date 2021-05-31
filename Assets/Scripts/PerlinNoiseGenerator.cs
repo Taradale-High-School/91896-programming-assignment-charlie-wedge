@@ -68,14 +68,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector2(1, 15),
         new Vector2(1, 15),
         new Vector2(1, 15),
-        // 3 - diamond:
-        new Vector2(8, 14),
-        new Vector2(8, 14),
-        new Vector2(8, 14),
-        // 4 - emerald:
-        new Vector2(9, 14),
-        new Vector2(9, 14),
-        new Vector2(9, 14),
+        // 3 - bedrock:
+        new Vector2(1, 14),
+        new Vector2(1, 14),
+        new Vector2(1, 14),
+        // 4 - netherrack:
+        new Vector2(7, 9),
+        new Vector2(7, 9),
+        new Vector2(7, 9),
         // 5 - redstone:
         new Vector2(10, 14),
         new Vector2(10, 14),
@@ -557,7 +557,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
                 int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale); // yCord = Surface
-                //print(new Vector3Int(x, yCord, z));
+
+                // World generation layers:
+
                 blockTypes[x, yCord, z] = 1; // Set every block on the surface to grass (1 = grass)
 
                 for (int y = 0; y < yCord; y++) // Set every block below the surface to stone
@@ -565,27 +567,41 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     blockTypes[x, y, z] = 2; // 2 = stone
                 }
 
+                int dirtDepth = 5;
+                // Set every block 5-6 blocks below the surface to dirt
+                for (int y=yCord-dirtDepth; y<yCord; y++)
+                {
+                    if (ValidYCord(y))
+                    {
+                        blockTypes[x, y, z] = 0; // 0 = dirt
+                    }
+                }
+                if (Random.value > 0.5f && ValidYCord(yCord - 6))
+                {
+                    blockTypes[x, yCord - (dirtDepth+1), z] = 0;
+                }
+
+
                 for (int y = yCord + 1; y < heightLimit; y++) // Set every block above the surface to air
                 {
                     blockTypes[x, y, z] = -1; // -1 = air
                 }
-                /*
-                for (int y=0; y<5; y++)
-                {
-                    blockTypes[x, y, z] = 3; // 3 = dimaond
-                }
 
-                for (int y = 5; y < 10; y++)
-                {
-                    blockTypes[x, y, z] = 4; // 4 = emerald
-                }
 
-                for (int y = 10; y < 15; y++)
+                // Have a 50% chance each of spawning bedrock at y=1 & y=2
+                for (int i=1; i<3; i++)
                 {
-                    blockTypes[x, y, z] = 5; // 5 = redstone
+                    if (Random.value > 0.5f)
+                    {
+                        blockTypes[x, i, z] = 3; // 3 = bedrock
+                    }
+                    else if (blockTypes[x, i, z] == -1 && Random.value > 0.8f) // If no bedrock is spawned at y=3 && 
+                    {
+                        blockTypes[x, i, z] = 4; // 4 = netherrack
+                    }
                 }
-                */
-
+                // Always spawn a layer of bedrock at y=0
+                blockTypes[x, 0, z] = 3; // 3 = bedrock
 
             }
         }
@@ -604,6 +620,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
             AskToGenerateMesh(chunkX, chunkZ, instant, blockTypes);
         }
 
+    }
+
+    private bool ValidYCord(int y)
+    {
+        return y > 0 && y < heightLimit; // Boundary test, making sure we don't spawn a block below the world nor above the world's height limit
     }
 
     // Generate a mesh for the given block
