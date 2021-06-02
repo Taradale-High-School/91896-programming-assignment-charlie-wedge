@@ -177,13 +177,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         chunkNameCounter = 0;
 
-        GenerateWorld(true);
+        //GenerateWorld(true);
 
     }
 
     private void Start()
     {
-        previousPlayerChunkPosition = new Vector2Int(0, 0);
+        previousPlayerChunkPosition = new Vector2Int(10, 0);
     }
 
 
@@ -323,15 +323,6 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     }
 
-    private Vector2Int CalculateChunkPosition(Transform chunkTransform) // Calculate the position of a chunk based on it's position on the world
-    {
-
-        Vector3 chunkWorldPosition = chunkTransform.GetChild(0).position;
-        print((Mathf.RoundToInt((chunkWorldPosition.x + 0.5f) / chunkSize), Mathf.RoundToInt((chunkWorldPosition.z + 0.5f) / chunkSize)));
-        return new Vector2Int(Mathf.RoundToInt((chunkWorldPosition.x + 0.5f) / chunkSize), Mathf.RoundToInt((chunkWorldPosition.z + 0.5f) / chunkSize));
-
-    }
-
     // This function generates the meshes for each block in the chunk specified
     private void GenerateMeshForChunk(int chunkX, int chunkZ, int[,,] blockTypes, bool reloading)
     {
@@ -375,9 +366,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
         Chunks[] adjacentChunkScripts = new Chunks[4];
         for (int i=0; i<4; i++)
         {
-            print(new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z));
+            //print(new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z));
             adjacentChunkScripts[i] = chunks[new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z)].GetComponent<Chunks>();
         }
+
+        bool[] chunksToReload = new bool[4];
 
         mesh = new Mesh();
         tempVerticesList = new List<Vector3>();
@@ -647,7 +640,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             Vector3Int blockToSearch = blockPosition + adjacentBlocksOffsets[i]; // The adjacent block to search
             int finalBlockTypeValue;
 
-            if (!(blockToSearch.y > heightLimit))
+            if (blockToSearch.y < heightLimit && blockToSearch.y > 0) // Only spawn a quad if it will be drawn within the height limits
             {
                 if (blockToSearch.z > chunkSize - 1)
                 {
@@ -667,12 +660,17 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 }
                 else
                 {
+                    //print("blockToSearch = " + blockToSearch);
                     finalBlockTypeValue = blockTypes[blockToSearch.x, blockToSearch.y, blockToSearch.z];
                 }
             }
+            else if (blockToSearch.y == heightLimit)
+            {
+                finalBlockTypeValue = -1;
+            }
             else
             {
-                finalBlockTypeValue = -1; // -1 = don't generate a quad since it will most likely be facing outside of the world
+                finalBlockTypeValue = 999999; // 999999 = don't generate a quad since it will most likely be facing outside of the world
             }
 
             /*

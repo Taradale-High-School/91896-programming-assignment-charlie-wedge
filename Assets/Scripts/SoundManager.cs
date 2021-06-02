@@ -47,7 +47,7 @@ public class SoundManager : MonoBehaviour
         CancelInvoke();
         invoking = false;
 
-        print("Playing a random song!");
+        //print("Playing a random song");
         audioSource.Stop();
         audioSource.clip = music[Random.Range(0, music.Length)];
         audioSource.Play();

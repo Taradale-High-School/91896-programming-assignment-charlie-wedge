@@ -963,7 +963,7 @@ MonoBehaviour:
   worldHeightScale: 40
   heightLimit: 50
   chunkSize: 16
-  renderDistance: 6
+  renderDistance: 24
   emptyChunkDistance: 1
   chunkSpawnRate: 0
   noiseScale: 5

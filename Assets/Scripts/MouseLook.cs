@@ -90,12 +90,13 @@ public class MouseLook : MonoBehaviour
                 blockLocalPosition = blockLocalPosition + normal;
                 if (blockLocalPosition.x >= chunkSize || blockLocalPosition.x < 0 || blockLocalPosition.z >= chunkSize || blockLocalPosition.z < 0)
                 {
+                    Vector2Int orignalChunkPosition = chunkPosition;
                     chunkPosition = new Vector2Int(chunkPosition.x + normal.x, chunkPosition.y + normal.z);
                     chunkObject = perlinNoiseGeneratorScript.chunks[chunkPosition].transform.GetChild(0);
                     Vector3Int offset = new Vector3Int();
                     if (normal.x == -1)
                     {
-                        offset = new Vector3Int(chunkSize, 0, 0);
+                        perlinNoiseGeneratorScript.ReloadChunk(hit.transform.gameObject, orignalChunkPosition.x, orignalChunkPosition.y);
                     }
                     else if (normal.x == 1)
                     {
@@ -112,9 +113,52 @@ public class MouseLook : MonoBehaviour
                     blockLocalPosition += offset;
                 }
             }
-            chunkObject.parent.GetComponent<Chunks>().EditBlockTypes(blockLocalPosition, blockChangeValue);
 
-            perlinNoiseGeneratorScript.ReloadChunk(chunkObject.parent.gameObject, chunkPosition.x, chunkPosition.y);
+            if (blockLocalPosition.y >= perlinNoiseGeneratorScript.heightLimit || blockLocalPosition.y < 0) // Don't try to edit blockData which doesn't exist
+            {
+                return;
+            }
+
+            Chunks chunkScript = chunkObject.parent.GetComponent<Chunks>();
+            // Check to make sure the player isn't trying to break bedrock:
+            if (blockChangeValue == -1)
+            {
+                if (chunkScript.GetSingleBlockType(blockLocalPosition) == 3) // 3 = bedrock
+                {
+                    return;
+                } 
+            }
+            chunkScript.EditBlockTypes(blockLocalPosition, blockChangeValue);
+
+            perlinNoiseGeneratorScript.ReloadChunk(chunkObject.parent.gameObject, chunkPosition.x, chunkPosition.y); // Reload the chunk which the block update occured in
+
+            // Need to update any adjacent chunks based on the blockLocalPosition:
+            if (blockChangeValue == -1) // If we are breaking a block...
+            {
+                if (blockLocalPosition.z == chunkSize - 1)
+                {
+                    CallReloadChunk(chunkPosition + new Vector2Int(0, 1));
+                }
+                else if (blockLocalPosition.z == 0)
+                {
+                    CallReloadChunk(chunkPosition + new Vector2Int(0, -1));
+                }
+                if (blockLocalPosition.x == chunkSize - 1)
+                {
+                    CallReloadChunk(chunkPosition + new Vector2Int(1, 0));
+                }
+                else if (blockLocalPosition.x == 0)
+                {
+                    CallReloadChunk(chunkPosition + new Vector2Int(-1, 0));
+                }
+            }
+
+            
         }
+    }
+
+    private void CallReloadChunk(Vector2Int chunkPosition)
+    {
+        perlinNoiseGeneratorScript.ReloadChunk(perlinNoiseGeneratorScript.chunks[chunkPosition], chunkPosition.x, chunkPosition.y);
     }
 }
