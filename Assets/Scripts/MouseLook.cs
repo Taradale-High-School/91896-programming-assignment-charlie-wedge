@@ -14,11 +14,14 @@ public class MouseLook : MonoBehaviour
 
     public int rayDistance; // Public so I can edit it in the editor
 
+    private int heightLimit;
+
 
     // Start is called before the first frame update
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        heightLimit = perlinNoiseGeneratorScript.heightLimit;
     }
 
     // Update is called once per frame
@@ -72,7 +75,7 @@ public class MouseLook : MonoBehaviour
             Transform chunkObject = hit.transform;
            // print(chunkObject.gameObject.name);
             Vector2Int chunkPosition = chunkObject.parent.GetComponent<Chunks>().chunkPosition;
-            Vector3Int blockLocalPosition = new Vector3Int(Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).x), 0, chunkSize - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).y), 0, 50 - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).z), 0, chunkSize - 1));
+            Vector3Int blockLocalPosition = new Vector3Int(Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).x), 0, chunkSize - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).y), 0, heightLimit - 1), Mathf.Clamp(Mathf.FloorToInt(chunkObject.InverseTransformPoint(blockWorldPosition).z), 0, chunkSize - 1));
 
             //print("Block position = " + blockLocalPosition);
             //print(hit.normal);
@@ -114,7 +117,7 @@ public class MouseLook : MonoBehaviour
                 }
             }
 
-            if (blockLocalPosition.y >= perlinNoiseGeneratorScript.heightLimit || blockLocalPosition.y < 0) // Don't try to edit blockData which doesn't exist
+            if (blockLocalPosition.y >= heightLimit || blockLocalPosition.y < 0) // Don't try to edit blockData which doesn't exist
             {
                 return;
             }

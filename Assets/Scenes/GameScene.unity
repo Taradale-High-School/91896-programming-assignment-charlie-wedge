@@ -335,6 +335,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e45654d13d68241e8acbd12654e2341a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  instantlyPlay: 1
   audioSource: {fileID: 406531565}
   music:
   - {fileID: 8300000, guid: 9b5734880cfc743068803e1d25476b1c, type: 3}
@@ -961,7 +962,8 @@ MonoBehaviour:
   perlinTextureSizeX: 256
   perlinTextureSizeY: 256
   worldHeightScale: 40
-  heightLimit: 50
+  heightLimit: 256
+  minSurfaceLevel: 50
   chunkSize: 16
   renderDistance: 12
   emptyChunkDistance: 1
@@ -974,8 +976,9 @@ MonoBehaviour:
     type: 3}
   emtpyMeshPrefab: {fileID: 5172422349473617331, guid: 1917d5d25ea859f4e8fb880d40906254,
     type: 3}
+  playerMovementScript: {fileID: 889489486}
   player: {fileID: 889489485}
-  playerChunkPosition: {x: 64, y: -36}
+  playerChunkPosition: {x: 0, y: 0}
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0

@@ -24,7 +24,12 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         //transform.position = new Vector3(0, perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0)), 0);'
-        transform.position = new Vector3(1024, 50, -576); // Should be (0, 50, 0), however it's not due to me quickly testing something
+    }
+
+    public void SpawnPlayer() // Public as it's called by the PerlinNoiseGenerator script once the world has loaded for the first ime
+    {
+        int surfaceLevelAtSpawnPoint = perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0), perlinNoiseGeneratorScript.chunks[new Vector2Int(0, 0)].GetComponent<Chunks>().GetBlockTypes());
+        transform.position = new Vector3(0, surfaceLevelAtSpawnPoint+40, 0); // Should be (0, 50, 0), however it's not due to me quickly testing something
     }
 
     // Update is called once per frame

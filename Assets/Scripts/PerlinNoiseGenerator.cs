@@ -12,6 +12,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public float worldHeightScale;
 
     public int heightLimit;
+    public int minSurfaceLevel;
 
     public int chunkSize;
     public int renderDistance;
@@ -35,11 +36,17 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private List<Vector2Int> toGeneratePosition; // the chunks which need to be generated (doing it this way saves on performance)
     private List<int[,,]> toGenerateChunksScript;
+    private List<GameObject> toUnloadGameObjects;
+
+
+    public PlayerMovement playerMovementScript;
 
     private Mesh mesh;
     private List<Vector3> tempVerticesList;
     private List<int> tempTrianglesList;
     private int loopCount = 0;
+
+    private bool worldLoaded = false; // Has the world loaded for the first time? Once true, the player will spawn
 
     public Transform player;
     public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
@@ -174,16 +181,18 @@ public class PerlinNoiseGenerator : MonoBehaviour
         //blockTypes = new Dictionary<Vector3Int, int>();
         toGeneratePosition = new List<Vector2Int>();
         toGenerateChunksScript = new List<int[,,]>();
+        toUnloadGameObjects = new List<GameObject>();
 
         chunkNameCounter = 0;
 
         //GenerateWorld(true);
+        //GenerateWorld(false);
 
     }
 
     private void Start()
     {
-        previousPlayerChunkPosition = new Vector2Int(10, 0);
+        previousPlayerChunkPosition = new Vector2Int(999999, 999999);
     }
 
 
@@ -198,7 +207,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             //print("You have moved into chunk " + playerChunkPosition);
             GenerateWorld(false);
-            StopAllCoroutines();
+            StopCoroutine(DelayBuildChunks());
             StartCoroutine(DelayBuildChunks());
 
         }
@@ -289,7 +298,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
             timeSinceLastWorldUpdate = Time.realtimeSinceStartup;
             print("World Generation Complete. Generated " + (renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) + " chunk" + ((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1)) == 1 ? "" : "s") + " in " + timeSinceLastWorldUpdate + " seconds!\n(" + timeSinceLastWorldUpdate / ((renderDistance + (renderDistance - 1)) * (renderDistance + (renderDistance - 1))) + " seconds per chunk!)");
         }
-
+        if (!worldLoaded)
+        {
+            worldLoaded = true;
+            playerMovementScript.SpawnPlayer();
+        }
         //Debug.Break();
     }
 
@@ -312,14 +325,18 @@ public class PerlinNoiseGenerator : MonoBehaviour
                         // print("Destorying chunk " + worldParent.GetChild(i).name);
                         // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
                         // Destroy(worldParent.GetChild(i).gameObject);
-                        worldParent.GetChild(i).gameObject.SetActive(false);
-                        worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
+                        //worldParent.GetChild(i).gameObject.SetActive(false);
+                        //worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
+                        toUnloadGameObjects.Add(worldParent.GetChild(i).gameObject);
                     }
                 }
 
             }
 
         }
+
+        StopCoroutine(DelayUnloadChunks());
+        StartCoroutine(DelayUnloadChunks());
 
     }
 
@@ -559,7 +576,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
-                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale); // yCord = Surface
+                int yCord = Mathf.RoundToInt((SampleStepped(xCord, zCord) * worldHeightScale) + minSurfaceLevel); // yCord = Surface
 
                 // World generation layers:
 
@@ -772,6 +789,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     // Get the height of the surface for x,z based on perlin noise
     private float SampleStepped(int x, int z)
     {
+
         // Get valid coordinates for Mathf.PerlinNoise() to use
         float xCord = (float)x / perlinTextureSizeX * noiseScale + perlinOffset.x;
         float zCord = (float)z / perlinTextureSizeY * noiseScale + perlinOffset.y;
@@ -801,13 +819,26 @@ public class PerlinNoiseGenerator : MonoBehaviour
         while (toGeneratePosition.Count > 0)
         {
             GenerateMeshForChunk(toGeneratePosition[0].x, toGeneratePosition[0].y, toGenerateChunksScript[0], false);
+
             toGeneratePosition.RemoveAt(0);
             toGenerateChunksScript.RemoveAt(0);
 
             yield return new WaitForSeconds(chunkSpawnRate);
-
         }
 
+    }
+
+    IEnumerator DelayUnloadChunks()
+    {
+        while (toUnloadGameObjects.Count > 0)
+        {
+            toUnloadGameObjects[0].gameObject.SetActive(false);
+            toUnloadGameObjects[0].GetComponent<Chunks>().meshVisible = false;
+
+            toUnloadGameObjects.RemoveAt(0);
+
+            yield return new WaitForSeconds(chunkSpawnRate);
+        }
     }
 
 

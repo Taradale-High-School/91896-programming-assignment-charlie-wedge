@@ -7,6 +7,8 @@ public class SoundManager : MonoBehaviour
     private static bool alreadyCopy;
     private bool invoking;
 
+    public bool instantlyPlay = true; // Should be true when in menus, false when playing the game. Public so the menu script can change it once we load into a game
+
     public AudioSource audioSource;
 
     public AudioClip[] music; // An array of the music that can play in the game. Public so I can reference the music from the project window via the Unity Editor
@@ -37,8 +39,15 @@ public class SoundManager : MonoBehaviour
     {
         if (!audioSource.isPlaying && !invoking)
         {
-            Invoke("PlayRandomSong", Random.Range(30f, 300f));
-            invoking = true;
+            if (instantlyPlay)
+            {
+                PlayRandomSong();
+            }
+            else
+            {
+                Invoke("PlayRandomSong", Random.Range(30f, 300f));
+                invoking = true;
+            }
         }
     }
 
