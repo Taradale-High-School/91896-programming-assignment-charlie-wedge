@@ -314,6 +314,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private void UnloadChunks()
     {
+
         for (int i = 0; i < worldParent.childCount; i++) // Go through every chunk currently loaded
         {
             if (worldParent.GetChild(i).name != "0") // Do not unload the center chunk
@@ -327,7 +328,11 @@ public class PerlinNoiseGenerator : MonoBehaviour
                         // Destroy(worldParent.GetChild(i).gameObject);
                         //worldParent.GetChild(i).gameObject.SetActive(false);
                         //worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
-                        toUnloadGameObjects.Add(worldParent.GetChild(i).gameObject);
+                        if (!(toUnloadGameObjects.Contains(worldParent.GetChild(i).gameObject)))
+                        {
+                            toUnloadGameObjects.Add(worldParent.GetChild(i).gameObject);
+                        }
+                        
                     }
                 }
 
