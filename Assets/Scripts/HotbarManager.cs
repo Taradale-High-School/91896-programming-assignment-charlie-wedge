@@ -142,7 +142,7 @@ public class HotbarManager : MonoBehaviour
             GenerateUVs(slotToWriteTo, blockType);
             inventoryBlockTypes[slotToWriteTo] = blockType;
         }
-        else if (inventoryBlockTypes[currentlySelectedSlot] == blockType) // Or if the player is holding the block type that their breaking, (rare, but for if it's not the most left position)
+        else if (inventoryBlockTypes[currentlySelectedSlot] == blockType && inventoryBlockCount[currentlySelectedSlot] < maximumStackCount) // Or if the player is holding the block type that their breaking, (rare, but for if it's not the most left position)
         {
             slotToWriteTo = currentlySelectedSlot;
         }
