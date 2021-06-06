@@ -11,6 +11,7 @@ public class MouseLook : MonoBehaviour
     float xRotation = 0f;
 
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+    public HotbarManager hotbarManagerScript;
 
     public int rayDistance; // Public so I can edit it in the editor
 
@@ -49,15 +50,15 @@ public class MouseLook : MonoBehaviour
         // Mouse presses: (breaking and placing blocks)
         if (Input.GetMouseButtonDown(0) || Input.GetAxis("Left Trigger") > 0)
         {
-            ShootRayCast(-1, true); // break
+            ShootRayCast(true); // break
         }
         if (Input.GetMouseButtonDown(1))
         {
-            ShootRayCast(6, false); // place
+            ShootRayCast(false); // place
         }
     }
 
-    private void ShootRayCast(int blockChangeValue, bool findNormal)
+    private void ShootRayCast(bool breakBlock)
     {
         RaycastHit hit;
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0f));
@@ -84,11 +85,11 @@ public class MouseLook : MonoBehaviour
 
             Vector3Int normal = Vector3Int.FloorToInt(hit.normal);
 
-            if (findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] == -1)
+            if (breakBlock && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] == -1)
             {
                 blockLocalPosition = blockLocalPosition - normal;
             }
-            else if (!findNormal && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] != -1)
+            else if (!breakBlock && blockTypes[blockLocalPosition.x, blockLocalPosition.y, blockLocalPosition.z] != -1)
             {
                 blockLocalPosition = blockLocalPosition + normal;
                 if (blockLocalPosition.x >= chunkSize || blockLocalPosition.x < 0 || blockLocalPosition.z >= chunkSize || blockLocalPosition.z < 0)
@@ -117,26 +118,44 @@ public class MouseLook : MonoBehaviour
                 }
             }
 
+            // Make sure we don't place a block higher than the height limit, nor place a block under the world
             if (blockLocalPosition.y >= heightLimit || blockLocalPosition.y < 0) // Don't try to edit blockData which doesn't exist
             {
                 return;
             }
 
             Chunks chunkScript = chunkObject.parent.GetComponent<Chunks>();
-            // Check to make sure the player isn't trying to break bedrock:
-            if (blockChangeValue == -1)
+            int newBlockType = -1; // The new value to set to the block the player clicked (-1 = break block, but could be changed later on)
+
+            if (breakBlock) // If the player is trying to break a block...
             {
-                if (chunkScript.GetSingleBlockType(blockLocalPosition) == 3) // 3 = bedrock
+                int blockToBreakBlockType = chunkScript.GetSingleBlockType(blockLocalPosition); // The type of block they are trying to break
+        
+                // Don't let them break it if it's bedrock
+                if (blockToBreakBlockType == 3) // 3 = bedrock
                 {
                     return;
-                } 
+                }
+                if (!hotbarManagerScript.GivePlayerBlock(blockToBreakBlockType)) // Give the player the block. Returns false if they can't fit it in their inventory, therefore don't break the block
+                {
+                    return;
+                }
             }
-            chunkScript.EditBlockTypes(blockLocalPosition, blockChangeValue);
+            else // If we are placing a block...
+            {
+                newBlockType = hotbarManagerScript.TakePlayerBlock(); // Returns -1 if there is no block to place, otherwise returns the blockType to place
+                if (newBlockType == -1)
+                {
+                    return;
+                }     
+            }
+            chunkScript.EditBlockTypes(blockLocalPosition, newBlockType);
+
 
             perlinNoiseGeneratorScript.ReloadChunk(chunkObject.parent.gameObject, chunkPosition.x, chunkPosition.y); // Reload the chunk which the block update occured in
 
             // Need to update any adjacent chunks based on the blockLocalPosition:
-            if (blockChangeValue == -1) // If we are breaking a block...
+            if (breakBlock) // If we are breaking a block...
             {
                 if (blockLocalPosition.z == chunkSize - 1)
                 {

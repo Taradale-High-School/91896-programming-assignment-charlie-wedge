@@ -417,8 +417,8 @@ Canvas:
   m_GameObject: {fileID: 643188671}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_RenderMode: 1
+  m_Camera: {fileID: 1372345056}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -525,6 +525,36 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   perlinNoiseGeneratorScript: {fileID: 2098694374}
+--- !u!1 &1286220032
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1286220033}
+  m_Layer: 5
+  m_Name: Object reference
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1286220033
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286220032}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 100, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1623719828}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1288358061
 GameObject:
   m_ObjectHideFlags: 0
@@ -659,10 +689,10 @@ Camera:
   field of view: 60
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 279
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -703,7 +733,82 @@ MonoBehaviour:
   mouseSensitivity: 100
   playerBody: {fileID: 889489485}
   perlinNoiseGeneratorScript: {fileID: 2098694374}
+  hotbarManagerScript: {fileID: 1623719831}
   rayDistance: 7
+--- !u!1 &1372345054
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1372345057}
+  - component: {fileID: 1372345056}
+  m_Layer: 0
+  m_Name: UI Camera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!20 &1372345056
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1372345054}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 3
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_FocalLength: 50
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 1
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 32
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &1372345057
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1372345054}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 395.69998, y: 32.975018, z: 16.4875}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1421774290
 GameObject:
   m_ObjectHideFlags: 0
@@ -801,6 +906,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1843849308}
+  - {fileID: 1286220033}
   m_Father: {fileID: 643188675}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -859,6 +965,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemBorder: {fileID: 1843849308}
+  blockPrefab: {fileID: 5646587879857497908, guid: 1aa5cc39128d4430d89ded5d55695a5e,
+    type: 3}
+  textPrefab: {fileID: 2025748806656689896, guid: 5c640c281ff004fedbb3c0bc65bbd31f,
+    type: 3}
+  perlinNoiseGeneratorScript: {fileID: 2098694374}
+  inventoryBlockTypes: 000000000000000000000000000000000000000000000000000000000000000000000000
+  inventoryBlockCount: 000000000000000000000000000000000000000000000000000000000000000000000000
+  maximumStackCount: 64
 --- !u!1 &1741083598
 GameObject:
   m_ObjectHideFlags: 0
@@ -1143,6 +1257,28 @@ MonoBehaviour:
   playerMovementScript: {fileID: 889489486}
   player: {fileID: 889489485}
   playerChunkPosition: {x: 0, y: 0}
+  blockIDs:
+  - {x: 2, y: 15}
+  - {x: 2, y: 15}
+  - {x: 2, y: 15}
+  - {x: 0, y: 15}
+  - {x: 3, y: 15}
+  - {x: 2, y: 15}
+  - {x: 1, y: 15}
+  - {x: 1, y: 15}
+  - {x: 1, y: 15}
+  - {x: 1, y: 14}
+  - {x: 1, y: 14}
+  - {x: 1, y: 14}
+  - {x: 7, y: 9}
+  - {x: 7, y: 9}
+  - {x: 7, y: 9}
+  - {x: 10, y: 14}
+  - {x: 10, y: 14}
+  - {x: 10, y: 14}
+  - {x: 4, y: 15}
+  - {x: 4, y: 15}
+  - {x: 4, y: 15}
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0

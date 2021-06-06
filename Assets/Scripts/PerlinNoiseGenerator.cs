@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Threading;
 
 public class PerlinNoiseGenerator : MonoBehaviour
 {
@@ -61,8 +60,8 @@ public class PerlinNoiseGenerator : MonoBehaviour
         1, 1, 1, 1, 0, 2
     };
 
-    // The UV position of each block in the texture atlas
-    private Vector2[] blockIDs = {
+    // The UV position of each block in the texture atlas. Public because HotbarManager needs it to spawn the textures for the hotbar's blocks
+    public Vector2[] blockIDs = {
         // 0 - dirt:
         new Vector2(2, 15), // top
         new Vector2(2, 15), // sides
