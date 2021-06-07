@@ -12,6 +12,7 @@ public class MouseLook : MonoBehaviour
 
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
     public HotbarManager hotbarManagerScript;
+    public PauseMenu pauseMenuScript;
 
     public int rayDistance; // Public so I can edit it in the editor
 
@@ -60,6 +61,10 @@ public class MouseLook : MonoBehaviour
 
     private void ShootRayCast(bool breakBlock)
     {
+        if (pauseMenuScript.gamePaused) // Don't let the player break / place blocks if the game is paused. Time.timeScale = 0 doesn't prevent this.
+        {
+            return;
+        }   
         RaycastHit hit;
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0f));
 

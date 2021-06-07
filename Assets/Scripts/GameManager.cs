@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
 
     public Dictionary<Vector2Int, int[,,]> previousSaveWorldData;
     public Vector3 previousSavePlayerPosition;
+    public string previousSaveWorldName;
     public bool previousSaveLoaded;
 
     public int seed;
