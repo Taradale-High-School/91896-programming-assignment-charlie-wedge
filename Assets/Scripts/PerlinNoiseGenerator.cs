@@ -21,8 +21,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public int noiseScale;
 
+    private GameManager gameManagerScript;
+
     public Vector2Int perlinOffset; // The offset in which we search the perlin noise at (seed)
-    public bool randomSeed;
 
     private int chunkNameCounter = 0;
 
@@ -163,18 +164,19 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     private void Awake()
     {
-
+        gameManagerScript = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
 
         if (renderDistance - emptyChunkDistance <= 0)
         {
             Debug.LogWarning("emptyChunkDistance cancels out renderDistance. This may result in weird behaviour with chunk meshes being generated.");
         }
 
-        if (randomSeed)
-        {
-            perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
-            noiseScale = Random.Range(3, 6);
-        }
+        Random.InitState(gameManagerScript.seed);
+
+        perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
+        noiseScale = Random.Range(3, 6);
+
+
 
         chunks = new Dictionary<Vector2Int, GameObject>();
         //blockTypes = new Dictionary<Vector3Int, int>();

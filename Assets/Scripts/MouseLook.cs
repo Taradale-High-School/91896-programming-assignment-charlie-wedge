@@ -100,7 +100,7 @@ public class MouseLook : MonoBehaviour
                     Vector3Int offset = new Vector3Int();
                     if (normal.x == -1)
                     {
-                        perlinNoiseGeneratorScript.ReloadChunk(hit.transform.gameObject, orignalChunkPosition.x, orignalChunkPosition.y);
+                        offset = new Vector3Int(chunkSize, 0, 0);
                     }
                     else if (normal.x == 1)
                     {

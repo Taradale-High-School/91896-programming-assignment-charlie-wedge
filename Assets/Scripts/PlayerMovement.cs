@@ -61,6 +61,10 @@ public class PlayerMovement : MonoBehaviour
 
         controller.Move(velocity * Time.deltaTime);
 
+        if (transform.position.y < -1)
+        {
+            transform.position = new Vector3(transform.position.x, perlinNoiseGeneratorScript.heightLimit+3, transform.position.z);
+        }
 
     }
 }

@@ -1,13 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SoundManager : MonoBehaviour
 {
     private static bool alreadyCopy;
     private bool invoking;
 
-    public bool instantlyPlay = true; // Should be true when in menus, false when playing the game. Public so the menu script can change it once we load into a game
+    public bool instantlyPlay; // Should be true when in menus, false when playing the game. Public so the game manager script can change it once we load into a game
 
     public AudioSource audioSource;
 
@@ -31,6 +32,7 @@ public class SoundManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        instantlyPlay = true; // When the application first loads, the first scene will be the menu scene, therefore instantlyPlay should initially be set to true.
         PlayRandomSong(); // Play a random song as soon as the player loads up our game
     }
 
