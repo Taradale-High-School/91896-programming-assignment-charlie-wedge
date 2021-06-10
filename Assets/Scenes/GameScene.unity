@@ -1095,7 +1095,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d25ee47e59e6b4696989397b81726598, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mouseSensitivity: 100
   playerBody: {fileID: 889489485}
   perlinNoiseGeneratorScript: {fileID: 2098694374}
   hotbarManagerScript: {fileID: 1623719831}
@@ -1964,7 +1963,7 @@ Transform:
   m_GameObject: {fileID: 1741083598}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 1, z: 0.8}
   m_Children: []
   m_Father: {fileID: 889489485}
   m_RootOrder: 2
@@ -2346,16 +2345,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d066bc01a3b7e4f3b90357ad393c00da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  perlinTextureSizeX: 256
-  perlinTextureSizeY: 256
+  perlinTerrainTextureSize: 256
+  perlinBiomeTextureSize: 1024
   worldHeightScale: 40
   heightLimit: 128
   minSurfaceLevel: 50
   chunkSize: 16
   emptyChunkDistance: 1
   chunkSpawnRate: 0.1
-  noiseScale: 5
-  perlinOffset: {x: 17157, y: 2387}
+  noiseTerrainScale: 0
+  noiseBiomeScale: 0
+  perlinTerrainOffset: {x: 0, y: 0}
+  perlinBiomeOffset: {x: 0, y: 0}
   worldParent: {fileID: 2076992686}
   chunkParent: {fileID: 4940573995945565891, guid: 0fefa12b8dcb243caa262beb1dc7b5ca,
     type: 3}
@@ -2387,6 +2388,7 @@ MonoBehaviour:
   - {x: 4, y: 15}
   - {x: 4, y: 15}
   - {x: 4, y: 15}
+  biomeBlocks: 010000000000000007000000070000000800000009000000
 --- !u!4 &2098694375
 Transform:
   m_ObjectHideFlags: 0
@@ -2417,3 +2419,4 @@ MonoBehaviour:
   gamePaused: 0
   player: {fileID: 889489485}
   perlinNoiseGeneratorScript: {fileID: 2098694374}
+  hotbarManagerScript: {fileID: 1623719831}

@@ -59,7 +59,35 @@ public class MouseLook : MonoBehaviour
         {
             ShootRayCast(false); // place
         }
+        /*
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            transform.localRotation = Quaternion.Euler(0, 0, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.O))
+        {
+            transform.localRotation = Quaternion.Euler(90, 0, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.U))
+        {
+            transform.localRotation = Quaternion.Euler(-90, 0, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.Y))
+        {
+            transform.localRotation = Quaternion.Euler(0, 90, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.T))
+        {
+            transform.localRotation = Quaternion.Euler(0, -90, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.I))
+        {
+            transform.localRotation = Quaternion.Euler(0, 0, 0);
+        }
+        */
     }
+
+
 
     private void ShootRayCast(bool breakBlock)
     {

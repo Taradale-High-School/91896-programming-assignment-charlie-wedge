@@ -12,6 +12,7 @@ public class PauseMenu : MonoBehaviour
 
     private GameManager gameManagerScript;
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+    public HotbarManager hotbarManagerScript;
 
     // Start is called before the first frame update
     void Start()
@@ -101,6 +102,8 @@ public class PauseMenu : MonoBehaviour
         GameManager.storedWorldName = GameManager.currentWorldName;
         GameManager.storedSeed = GameManager.currentSeed;
         GameManager.storedDataPresent = true;
+        GameManager.storedHotbarBlockTypes = hotbarManagerScript.inventoryBlockTypes;
+        GameManager.storedHotbarBlockCount = hotbarManagerScript.inventoryBlockCount;
 
         if (exit)
         {

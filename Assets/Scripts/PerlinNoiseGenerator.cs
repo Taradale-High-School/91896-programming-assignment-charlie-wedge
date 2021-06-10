@@ -6,8 +6,8 @@ using System.Linq;
 public class PerlinNoiseGenerator : MonoBehaviour
 {
     // Most of these varaibles are public to make it easier for me to debug and change their values in the editor
-    public int perlinTextureSizeX;
-    public int perlinTextureSizeY;
+    public int perlinTerrainTextureSize;
+    public int perlinBiomeTextureSize;
 
     public float worldHeightScale;
 
@@ -20,11 +20,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
     public float chunkSpawnRate; // The greater the number, the slower chunks spawn. (chunks spawned x number of seconds). This results in better performance, but slower world generation when exploring.
 
-    public int noiseScale;
+    public int noiseTerrainScale;
+    public int noiseBiomeScale;
 
     private GameManager gameManagerScript;
 
-    public Vector2Int perlinOffset; // The offset in which we search the perlin noise at (seed)
+    public Vector2Int perlinTerrainOffset; // The offset in which we search the perlin noise at (seed almost)
+    public Vector2Int perlinBiomeOffset;
 
     private int chunkNameCounter = 0;
 
@@ -64,37 +66,9 @@ public class PerlinNoiseGenerator : MonoBehaviour
         1, 1, 1, 1, 0, 2
     };
 
-    // The UV position of each block in the texture atlas. Public because HotbarManager needs it to spawn the textures for the hotbar's blocks
-    public Vector2[] blockIDs = {
-        // 0 - dirt:
-        new Vector2(2, 15), // top
-        new Vector2(2, 15), // sides
-        new Vector2(2, 15), // bottom
-        // 1 - grass:
-        new Vector2(0, 15), // grass top
-        new Vector2(3, 15), // grass side
-        new Vector2(2, 15), // dirt
-        // 2 - stone:
-        new Vector2(1, 15),
-        new Vector2(1, 15),
-        new Vector2(1, 15),
-        // 3 - bedrock:
-        new Vector2(1, 14),
-        new Vector2(1, 14),
-        new Vector2(1, 14),
-        // 4 - netherrack:
-        new Vector2(7, 9),
-        new Vector2(7, 9),
-        new Vector2(7, 9),
-        // 5 - redstone:
-        new Vector2(10, 14),
-        new Vector2(10, 14),
-        new Vector2(10, 14),
-        // 6 - wooden planks:
-        new Vector2(4, 15),
-        new Vector2(4, 15),
-        new Vector2(4, 15)
-    };
+    // The following two arrays are initialised in the Awake() function:
+    public Vector2[] blockIDs;
+    public int[] biomeBlocks;
 
 
     // The offsets which make up all the blocks around a block, (for generating quads)
@@ -163,7 +137,67 @@ public class PerlinNoiseGenerator : MonoBehaviour
         new Vector3(1, 0, 0)
     };
 
+    private void Awake()
+    {
+        // The UV position of each block in the texture atlas. Public because HotbarManager needs it to spawn the textures for the hotbar's blocks
+        blockIDs = new Vector2[] {
+        // 0 - dirt:
+        new Vector2(2, 15), // top
+        new Vector2(2, 15), // sides
+        new Vector2(2, 15), // bottom
+        // 1 - grass:
+        new Vector2(0, 15), // grass top
+        new Vector2(3, 15), // grass side
+        new Vector2(2, 15), // dirt
+        // 2 - stone:
+        new Vector2(1, 15),
+        new Vector2(1, 15),
+        new Vector2(1, 15),
+        // 3 - bedrock:
+        new Vector2(1, 14),
+        new Vector2(1, 14),
+        new Vector2(1, 14),
+        // 4 - netherrack:
+        new Vector2(7, 9),
+        new Vector2(7, 9),
+        new Vector2(7, 9),
+        // 5 - redstone:
+        new Vector2(10, 14),
+        new Vector2(10, 14),
+        new Vector2(10, 14),
+        // 6 - wooden planks:
+        new Vector2(4, 15),
+        new Vector2(4, 15),
+        new Vector2(4, 15),
+        // 7 - sand:
+        new Vector2(2, 14),
+        new Vector2(2, 14),
+        new Vector2(2, 14),
+        // 8 - snow grass:
+        new Vector2(0, 11), // top
+        new Vector2(4, 11), // sides
+        new Vector2(2, 15), // bottom (dirt texture)
+        // 9 - snow block:
+        new Vector2(2, 11),
+        new Vector2(2, 11),
+        new Vector2(2, 11),
+        // 10 - cactus:
+        new Vector2(7, 11), // top
+        new Vector2(6, 11), // sides
+        new Vector2(5, 11), // bottom
+        };
 
+        // For each biome, the first int is the surface block, the second int is the block 5-6 layers below the surface. EG: grass then dirt
+        biomeBlocks = new int[]
+        {
+            // biome 0 - sand:
+            7, 7,
+            // biome 1 - dirt/grass:
+            1, 0,
+            // biome 2 - snow:
+            8, 0
+        };
+    }
 
     private void Start()
     {
@@ -198,11 +232,13 @@ public class PerlinNoiseGenerator : MonoBehaviour
             player.position = GameManager.storedPlayerPosition;
         }
 
-
         Random.InitState(GameManager.currentSeed);
 
-        perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
-        noiseScale = Random.Range(3, 6);
+        perlinTerrainOffset = GetRandomOffset();
+        perlinBiomeOffset = GetRandomOffset();
+
+        noiseTerrainScale = Random.Range(3, 6);
+        noiseBiomeScale = Random.Range(3, 6);
 
 
 
@@ -246,6 +282,12 @@ public class PerlinNoiseGenerator : MonoBehaviour
         previousPlayerChunkPosition = playerChunkPosition;
 
     }
+
+    private Vector2Int GetRandomOffset()
+    {
+        return new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
+    }
+
     // Reload the world by only loading in chunks which have not yet been loaded in (for when the player moves chunk)
     private void AskToGenerateMesh(int x, int y, bool instant, int[,,] blockTypes)
     {
@@ -333,7 +375,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         {
             worldLoaded = true;
             float loadingScreenTime = 3f;
-            Invoke("SpawnPlayer", loadingScreenTime-0.1f);
+            Invoke("SpawnPlayer", loadingScreenTime - 0.1f);
             Invoke("DisableLoadingCanvas", loadingScreenTime);
         }
         //Debug.Break();
@@ -457,7 +499,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
-                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord) * worldHeightScale);
+                int yCord = Mathf.RoundToInt(SampleStepped(xCord, zCord, perlinBiomeTextureSize, noiseTerrainScale, perlinTerrainOffset) * worldHeightScale);
                 for (int y = 0; y < heightLimit + 0; y++) // change this to y<heightLimit if I'm testing out/using floating blocks (blocks above the surface)
                 {
                     if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
@@ -470,6 +512,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                         // Add to the uvs array:
                         for (int i = 0; i < verticesOrder.Count; i++) // For every block face in the chunk (mesh)
                         {
+
                             Vector2 uvBlockVector2 = blockIDs[(blockTypes[x, y, z] * 3) + blockIDIndexOffsetLocations[verticesOrder[i]]];
                             float ublock = uvBlockVector2.x;
                             float vblock = uvBlockVector2.y;
@@ -637,11 +680,43 @@ public class PerlinNoiseGenerator : MonoBehaviour
             {
                 int xCord = x + (chunkX * chunkSize);
                 int zCord = z + (chunkZ * chunkSize);
-                int yCord = Mathf.RoundToInt((SampleStepped(xCord, zCord) * worldHeightScale) + minSurfaceLevel); // yCord = Surface
+                int yCord = Mathf.RoundToInt((SampleStepped(xCord, zCord, perlinTerrainTextureSize, noiseTerrainScale, perlinTerrainOffset) * worldHeightScale) + minSurfaceLevel); // yCord = Surface
+
+
+                for (int y = yCord + 1; y < heightLimit; y++) // Set every block above the surface to air
+                {
+                    blockTypes[x, y, z] = -1; // -1 = air
+                }
+
+                float biomeRaw = SampleStepped(xCord, zCord, perlinBiomeTextureSize, noiseBiomeScale, perlinBiomeOffset);
+                int biome;
+                if (biomeRaw < 0.3)
+                {
+                    biome = 0; // 0 = sand
+
+                    if (biomeRaw % 0.01 == 0) // Spawn a cactus at random? (VERY RARE)
+                    {
+                        for (int i = 1; i < Random.Range(1, 4); i++)
+                        {
+                            blockTypes[x, yCord + i, z] = 10;
+                        }
+                    }
+                }
+                else if (biomeRaw > 0.6)
+                {
+                    biome = 2; // 2 = snow
+                }
+                else
+                {
+                    biome = 1; // 1 = dirt/grass
+                }
+
+                int surfaceBlock = biomeBlocks[2 * biome];
+                int layerBlock = biomeBlocks[(2 * biome) + 1];
 
                 // World generation layers:
 
-                blockTypes[x, yCord, z] = 1; // Set every block on the surface to grass (1 = grass)
+                blockTypes[x, yCord, z] = surfaceBlock; // Set every block on the surface to grass (1 = grass)
 
                 for (int y = 0; y < yCord; y++) // Set every block below the surface to stone
                 {
@@ -654,19 +729,14 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 {
                     if (ValidYCord(y))
                     {
-                        blockTypes[x, y, z] = 0; // 0 = dirt
+                        blockTypes[x, y, z] = layerBlock; // 0 = dirt
                     }
                 }
                 if (Random.value > 0.5f && ValidYCord(yCord - 6))
                 {
-                    blockTypes[x, yCord - (dirtDepth + 1), z] = 0;
+                    blockTypes[x, yCord - (dirtDepth + 1), z] = layerBlock;
                 }
 
-
-                for (int y = yCord + 1; y < heightLimit; y++) // Set every block above the surface to air
-                {
-                    blockTypes[x, y, z] = -1; // -1 = air
-                }
 
 
                 // Have a 50% chance each of spawning bedrock at y=1 & y=2
@@ -848,12 +918,12 @@ public class PerlinNoiseGenerator : MonoBehaviour
     }
 
     // Get the height of the surface for x,z based on perlin noise
-    private float SampleStepped(int x, int z)
+    private float SampleStepped(int x, int z, int textureSize, int noiseScale, Vector2 offset)
     {
 
         // Get valid coordinates for Mathf.PerlinNoise() to use
-        float xCord = (float)x / perlinTextureSizeX * noiseScale + perlinOffset.x;
-        float zCord = (float)z / perlinTextureSizeY * noiseScale + perlinOffset.y;
+        float xCord = (float)x / textureSize * noiseScale + offset.x;
+        float zCord = (float)z / textureSize * noiseScale + offset.y;
 
         float sample = Mathf.PerlinNoise(xCord, zCord);
 

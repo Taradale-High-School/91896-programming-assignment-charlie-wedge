@@ -38,15 +38,29 @@ public class HotbarManager : MonoBehaviour
 
     private Mesh masterMeshForBlocks;
 
+
+    private void Awake()
+    {
+        if (GameManager.loadPreviousSave)
+        {
+            inventoryBlockTypes = GameManager.storedHotbarBlockTypes;
+            inventoryBlockCount = GameManager.storedHotbarBlockCount;
+        }
+        else
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                inventoryBlockTypes[i] = -1;
+                inventoryBlockCount[i] = 0;
+            }
+        }
+    }
+
     // Start is called before the first frame update. This Start function just initialises stuff.
     void Start()
     {
         // Initialise stuff:
-        for (int i=0; i<9; i++)
-        {
-            inventoryBlockTypes[i] = -1;
-            inventoryBlockCount[i] = 0;
-        }
+
 
         CreateHotbarItemGameObjects();
         SelectedSlotChanged();
@@ -55,9 +69,14 @@ public class HotbarManager : MonoBehaviour
 
         GenerateItemMesh();
 
-        GivePlayerBlock(5);
-
-        
+        for (int i=0; i<9; i++) // Check if the hotbar already has items in it (if loaded from a previous save). If so, generate the UV for that item!
+        {
+            if (inventoryBlockTypes[i] != -1)
+            {
+                GenerateUVs(i, inventoryBlockTypes[i]);
+                UpdateSlotText(i);
+            }
+        }
     }
 
     // Update is called once per frame
@@ -182,6 +201,11 @@ public class HotbarManager : MonoBehaviour
     private void ChangeSlotValue(int slotNum, bool increase)
     {
         inventoryBlockCount[slotNum] += (increase ? 1 : -1);
+        UpdateSlotText(slotNum);
+    }
+
+    private void UpdateSlotText(int slotNum)
+    {
         slotTexts[slotNum].text = inventoryBlockCount[slotNum].ToString();
     }
 

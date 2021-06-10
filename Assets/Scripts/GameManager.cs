@@ -16,6 +16,9 @@ public class GameManager : MonoBehaviour
     public static bool storedDataPresent;
     public static int storedSeed;
 
+    public static int[] storedHotbarBlockTypes;
+    public static int[] storedHotbarBlockCount;
+
     public static bool loadPreviousSave; // Load the current saved game or create a new world? This boolean is checked by the PerlinNoiseGenerator script whenever the GameScene is loaded
 
     public static int currentSeed;
