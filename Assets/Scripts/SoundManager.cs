@@ -39,16 +39,23 @@ public class SoundManager : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (!audioSource.isPlaying && !invoking)
+        if (!audioSource.isPlaying)
         {
-            if (instantlyPlay)
+            if (!invoking)
+            {
+                if (instantlyPlay)
+                {
+                    PlayRandomSong();
+                }
+                else
+                {
+                    Invoke("PlayRandomSong", Random.Range(30f, 300f));
+                    invoking = true;
+                }
+            }
+            else if (instantlyPlay) // For when instantlyPlay is set to true while it is invoking another song
             {
                 PlayRandomSong();
-            }
-            else
-            {
-                Invoke("PlayRandomSong", Random.Range(30f, 300f));
-                invoking = true;
             }
         }
     }

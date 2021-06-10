@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class MouseLook : MonoBehaviour
 {
-    public float mouseSensitivity = 100f;
+    public static float mouseSensitivity = 100f;
+    public static bool invertMouse = false;
 
     public Transform playerBody;
 
@@ -29,15 +30,15 @@ public class MouseLook : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime * (invertMouse ? -1 : 1);
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime * (invertMouse ? -1 : 1);
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Ensure the player doesn't look up or down beyond 90º
 
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         playerBody.Rotate(Vector3.up * mouseX);
-
+        /*
         // Temp code:
         if (Input.GetKeyDown(KeyCode.Z))
         {
@@ -47,6 +48,7 @@ public class MouseLook : MonoBehaviour
         {
             Cursor.lockState = CursorLockMode.Locked;
         }
+        */
         //print(Input.GetAxis("Left Trigger"));
         // Mouse presses: (breaking and placing blocks)
         if (Input.GetMouseButtonDown(0) || Input.GetAxis("Left Trigger") > 0)

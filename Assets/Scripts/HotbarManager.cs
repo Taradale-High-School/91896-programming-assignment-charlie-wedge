@@ -10,6 +10,7 @@ public class HotbarManager : MonoBehaviour
     public GameObject textPrefab;
 
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+    public PauseMenu pauseMenuScript;
 
     // I hate this, but I'm not sure there's any other way to get all neumeric keys
     private KeyCode[] numberKeyCodes =
@@ -54,22 +55,26 @@ public class HotbarManager : MonoBehaviour
 
         GenerateItemMesh();
 
+        GivePlayerBlock(5);
+
         
     }
 
     // Update is called once per frame
     void Update()
     {
-        // Search to check if they player has pressed a neumeric key within the numberKeyCodes range
-        for (int i = 0; i < numberKeyCodes.Length; i++)
+        if (!pauseMenuScript.gamePaused)
         {
-            if (Input.GetKeyDown(numberKeyCodes[i]))
+            // Search to check if they player has pressed a neumeric key within the numberKeyCodes range
+            for (int i = 0; i < numberKeyCodes.Length; i++)
             {
-                currentlySelectedSlot = i;
-                SelectedSlotChanged();
+                if (Input.GetKeyDown(numberKeyCodes[i]))
+                {
+                    currentlySelectedSlot = i;
+                    SelectedSlotChanged();
+                }
             }
         }
-
     }
 
     // Using an IEnumerator here allows me to customise the scroll rate. Update() would create an inconsistent scroll rate, and FixedUpdate() has too fast of a scroll rate.
@@ -77,17 +82,20 @@ public class HotbarManager : MonoBehaviour
     {
         while (true) // I never thought I would ever do this, but it works.
         {
-            // Check the scroll wheel:
-            float mouseScroll = Input.mouseScrollDelta.y;
-            if (mouseScroll > 0)
+            if (!pauseMenuScript.gamePaused)
             {
-                currentlySelectedSlot++;
-                SelectedSlotChanged();
-            }
-            else if (mouseScroll < 0)
-            {
-                currentlySelectedSlot--;
-                SelectedSlotChanged();
+                // Check the scroll wheel:
+                float mouseScroll = Input.mouseScrollDelta.y;
+                if (mouseScroll > 0)
+                {
+                    currentlySelectedSlot++;
+                    SelectedSlotChanged();
+                }
+                else if (mouseScroll < 0)
+                {
+                    currentlySelectedSlot--;
+                    SelectedSlotChanged();
+                }
             }
 
             yield return new WaitForSeconds(scrollRate);

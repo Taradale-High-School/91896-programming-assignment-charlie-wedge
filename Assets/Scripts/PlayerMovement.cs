@@ -18,7 +18,10 @@ public class PlayerMovement : MonoBehaviour
     Vector3 velocity;
     bool isGrounded;
 
+    bool playerSpawned;
+
     public PerlinNoiseGenerator perlinNoiseGeneratorScript;
+
 
     // LateStart is called after the other Start() methods in other scripts, and therefore after the world has been generated
     void Start()
@@ -26,44 +29,63 @@ public class PlayerMovement : MonoBehaviour
         //transform.position = new Vector3(0, perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0)), 0);'
     }
 
-    public void SpawnPlayer() // Public as it's called by the PerlinNoiseGenerator script once the world has loaded for the first ime
+    public void SpawnPlayer(bool useStoredPosition) // Public as it's called by the PerlinNoiseGenerator script once the world has loaded for the first ime
     {
-        int surfaceLevelAtSpawnPoint = perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0), perlinNoiseGeneratorScript.chunks[new Vector2Int(0, 0)].GetComponent<Chunks>().GetBlockTypes());
-        transform.position = new Vector3(0, surfaceLevelAtSpawnPoint+40, 0); // Should be (0, 50, 0), however it's not due to me quickly testing something
+        if (useStoredPosition)
+        {
+            Vector3 playerPosition = GameManager.storedPlayerPosition;
+            transform.position = new Vector3(playerPosition.x, playerPosition.y + 1, playerPosition.z); // Add +1 to the y-cord to prevent cliping into the block below the player
+            transform.rotation = GameManager.storedPlayerRotation;
+        }
+        else
+        {
+            int surfaceLevelAtSpawnPoint = perlinNoiseGeneratorScript.GetSurfaceHeight(new Vector2Int(0, 0), perlinNoiseGeneratorScript.chunks[new Vector2Int(0, 0)].GetComponent<Chunks>().GetBlockTypes());
+            transform.position = new Vector3(0, surfaceLevelAtSpawnPoint + 1, 0); // Should be (0, 50, 0), however it's not due to me quickly testing something
+        }
+
+        Invoke("PlayerHasSpawned", 0.1f);
+
+    }
+
+    private void PlayerHasSpawned()
+    {
+        playerSpawned = true;
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
-
-        if (isGrounded && velocity.y < 0)
+        if (playerSpawned)
         {
-            velocity.y = -2f;
-        }
+            isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
+            if (isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f;
+            }
 
-        Vector3 move = transform.right * x + transform.forward * z;
+            float x = Input.GetAxis("Horizontal");
+            float z = Input.GetAxis("Vertical");
 
-        controller.Move(move * speed * Time.deltaTime);
+            Vector3 move = transform.right * x + transform.forward * z;
 
-        // jumping velocity: v=sqrt(h*-2*g)
-        if (Input.GetButton("Jump") && isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
+            controller.Move(move * speed * Time.deltaTime);
 
-        // Gravity: (note - change in y=(1/2)g*t*t)
-        velocity.y += gravity * Time.deltaTime;
+            // jumping velocity: v=sqrt(h*-2*g)
+            if (Input.GetButton("Jump") && isGrounded)
+            {
+                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            }
 
-        controller.Move(velocity * Time.deltaTime);
+            // Gravity: (note - change in y=(1/2)g*t*t)
+            velocity.y += gravity * Time.deltaTime;
 
-        if (transform.position.y < -1)
-        {
-            transform.position = new Vector3(transform.position.x, perlinNoiseGeneratorScript.heightLimit+3, transform.position.z);
+            controller.Move(velocity * Time.deltaTime);
+
+            if (transform.position.y < -1) // Spawn them back at the surface if they clip through the ground (it does happen)
+            {
+                transform.position = new Vector3(transform.position.x, perlinNoiseGeneratorScript.heightLimit + 3, transform.position.z);
+            }
         }
 
     }

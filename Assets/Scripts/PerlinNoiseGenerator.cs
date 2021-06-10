@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class PerlinNoiseGenerator : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public int minSurfaceLevel;
 
     public int chunkSize;
-    public int renderDistance;
+    public static int renderDistance = 6;
     public int emptyChunkDistance; // The amount of values in the renderDistance variable which will not have their mesh generated, just their data
 
     public float chunkSpawnRate; // The greater the number, the slower chunks spawn. (chunks spawned x number of seconds). This results in better performance, but slower world generation when exploring.
@@ -32,7 +33,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     public GameObject emtpyMeshPrefab;
 
     public Dictionary<Vector2Int, GameObject> chunks; // Keeps track of each chunk empty object
-                                                       //  private Dictionary<Vector3Int, int> blockTypes; // Keeps track of each block type
+                                                      //  private Dictionary<Vector3Int, int> blockTypes; // Keeps track of each block type
 
     private List<Vector2Int> toGeneratePosition; // the chunks which need to be generated (doing it this way saves on performance)
     private List<int[,,]> toGenerateChunksScript;
@@ -40,6 +41,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
     public PlayerMovement playerMovementScript;
+    public GameObject loadingCanvas;
 
     private Mesh mesh;
     private List<Vector3> tempVerticesList;
@@ -47,6 +49,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
     private int loopCount = 0;
 
     private bool worldLoaded = false; // Has the world loaded for the first time? Once true, the player will spawn
+    private bool wasLoadedFromSave = false; // If true, we'll ask the PlayerMovement script to spawn the player at the correct position
 
     public Transform player;
     public Vector2Int playerChunkPosition; // Public so I can test and debug in the Unity Editor
@@ -162,7 +165,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
 
-    private void Awake()
+    private void Start()
     {
         gameManagerScript = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
 
@@ -171,31 +174,58 @@ public class PerlinNoiseGenerator : MonoBehaviour
             Debug.LogWarning("emptyChunkDistance cancels out renderDistance. This may result in weird behaviour with chunk meshes being generated.");
         }
 
-        Random.InitState(gameManagerScript.seed);
+        chunkNameCounter = 0;
+
+        chunks = new Dictionary<Vector2Int, GameObject>();
+
+        if (GameManager.loadPreviousSave) // We're loading into a saved world
+        {
+            //chunks = gameManagerScript.previousSaveWorldData;
+            foreach (KeyValuePair<Vector2Int, int[,,]> chunkData in gameManagerScript.ReadChunkData())
+            {
+                GameObject chunkObject = Instantiate(chunkParent, chunkParent.transform.position, chunkParent.transform.rotation, worldParent).gameObject;
+                chunkObject.name = chunkNameCounter.ToString();
+                chunkNameCounter++;
+                Chunks chunkObjectChunksScript = chunkObject.GetComponent<Chunks>();
+                chunkObjectChunksScript.StoreBlockTypes(chunkData.Value);
+                chunkObjectChunksScript.meshGenerated = true;
+                chunks[chunkData.Key] = chunkObject;
+
+            }
+            GameManager.loadPreviousSave = false;
+            wasLoadedFromSave = true;
+
+            player.position = GameManager.storedPlayerPosition;
+        }
+
+
+        Random.InitState(GameManager.currentSeed);
 
         perlinOffset = new Vector2Int(Random.Range(-25000, 25000), Random.Range(-25000, 25000));
         noiseScale = Random.Range(3, 6);
 
 
 
-        chunks = new Dictionary<Vector2Int, GameObject>();
+
         //blockTypes = new Dictionary<Vector3Int, int>();
         toGeneratePosition = new List<Vector2Int>();
         toGenerateChunksScript = new List<int[,,]>();
         toUnloadGameObjects = new List<GameObject>();
 
-        chunkNameCounter = 0;
+
 
         //GenerateWorld(true);
         //GenerateWorld(false);
 
-    }
+        previousPlayerChunkPosition = new Vector2Int(999999, 999999);
 
+    }
+    /*
     private void Start()
     {
         previousPlayerChunkPosition = new Vector2Int(999999, 999999);
     }
-
+    */
 
     // Update is called once per frame
     void Update()
@@ -302,9 +332,21 @@ public class PerlinNoiseGenerator : MonoBehaviour
         if (!worldLoaded)
         {
             worldLoaded = true;
-            playerMovementScript.SpawnPlayer();
+            float loadingScreenTime = 3f;
+            Invoke("SpawnPlayer", loadingScreenTime-0.1f);
+            Invoke("DisableLoadingCanvas", loadingScreenTime);
         }
         //Debug.Break();
+    }
+
+    // This really shouldn't be in this script, but oh well
+    private void DisableLoadingCanvas()
+    {
+        loadingCanvas.SetActive(false);
+    }
+    private void SpawnPlayer()
+    {
+        playerMovementScript.SpawnPlayer(wasLoadedFromSave);
     }
 
     public void ReloadChunk(GameObject chunkObject, int chunkX, int chunkZ)
@@ -318,26 +360,24 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         for (int i = 0; i < worldParent.childCount; i++) // Go through every chunk currently loaded
         {
-            if (worldParent.GetChild(i).name != "0") // Do not unload the center chunk
+            if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name))) // Check the currentlyLoadedChunks list to check if this chunk should be unloaded (if it's not in the list it should be unloaded)
             {
-                if (!(currentlyLoadedChunks.Contains(worldParent.GetChild(i).name))) // Check the currentlyLoadedChunks list to check if this chunk should be unloaded (if it's not in the list it should be unloaded)
+                if (worldParent.GetChild(i).childCount > 0) // No need to unload chunks which don't even have a mesh object
                 {
-                    if (worldParent.GetChild(i).childCount > 0) // No need to unload chunks which don't even have a mesh object
+                    // print("Destorying chunk " + worldParent.GetChild(i).name);
+                    // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
+                    // Destroy(worldParent.GetChild(i).gameObject);
+                    //worldParent.GetChild(i).gameObject.SetActive(false);
+                    //worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
+                    if (!(toUnloadGameObjects.Contains(worldParent.GetChild(i).gameObject)))
                     {
-                        // print("Destorying chunk " + worldParent.GetChild(i).name);
-                        // chunks.Remove(CalculateChunkPosition(worldParent.GetChild(i)));
-                        // Destroy(worldParent.GetChild(i).gameObject);
-                        //worldParent.GetChild(i).gameObject.SetActive(false);
-                        //worldParent.GetChild(i).GetComponent<Chunks>().meshVisible = false;
-                        if (!(toUnloadGameObjects.Contains(worldParent.GetChild(i).gameObject)))
-                        {
-                            toUnloadGameObjects.Add(worldParent.GetChild(i).gameObject);
-                        }
-                        
+                        toUnloadGameObjects.Add(worldParent.GetChild(i).gameObject);
                     }
-                }
 
+                }
             }
+
+
 
         }
 
@@ -387,10 +427,19 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
         // Get the Chunks script from all four chunks adjacent to this chunk. This is so later I can call GetSingleBlockType() on these scripts.
         Chunks[] adjacentChunkScripts = new Chunks[4];
-        for (int i=0; i<4; i++)
+        for (int i = 0; i < 4; i++)
         {
             //print(new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z));
-            adjacentChunkScripts[i] = chunks[new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z)].GetComponent<Chunks>();
+            Vector2Int position = new Vector2Int(chunkX + adjacentBlocksOffsets[i].x, chunkZ + adjacentBlocksOffsets[i].z);
+            if (chunks.ContainsKey(position)) // A very lazy fix to a very bad bug, but this assessment is due in three days so it is what it is
+            {
+                adjacentChunkScripts[i] = chunks[position].GetComponent<Chunks>();
+            }
+            else
+            {
+                return;
+            }
+
         }
 
         bool[] chunksToReload = new bool[4];
@@ -414,7 +463,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                     if (blockTypes[x, y, z] != -1) // Only attempt to draw meshes on this block if it's actually a block! (not air)
                     {
 
-                        
+
                         List<int> verticesOrder = GenerateMesh(new Vector3Int(x, y, z), new Vector3Int(chunkX, 0, chunkZ), chunks[new Vector2Int(chunkX, chunkZ)].transform, blockTypes, adjacentChunkScripts); // Generate the mesh for that block
 
 
@@ -470,7 +519,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                                 uvsList.Add(new Vector2(umax, vmin)); //bottom-right
                                 uvsList.Add(new Vector2(umin, vmin)); //bottom-left
                             }
-                            
+
                         }
 
                     }
@@ -562,6 +611,12 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 }
 
             }
+            else if (chunkObject.GetComponent<Chunks>().meshGenerated)
+            {
+                currentlyLoadedChunks.Add(chunkObject.name);
+                AskToGenerateMesh(chunkX, chunkZ, instant, chunkObject.GetComponent<Chunks>().GetBlockTypes());
+                return;
+            }
 
         }
 
@@ -595,7 +650,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
                 int dirtDepth = 5;
                 // Set every block 5-6 blocks below the surface to dirt
-                for (int y=yCord-dirtDepth; y<yCord; y++)
+                for (int y = yCord - dirtDepth; y < yCord; y++)
                 {
                     if (ValidYCord(y))
                     {
@@ -604,7 +659,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
                 }
                 if (Random.value > 0.5f && ValidYCord(yCord - 6))
                 {
-                    blockTypes[x, yCord - (dirtDepth+1), z] = 0;
+                    blockTypes[x, yCord - (dirtDepth + 1), z] = 0;
                 }
 
 
@@ -615,7 +670,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
 
 
                 // Have a 50% chance each of spawning bedrock at y=1 & y=2
-                for (int i=1; i<3; i++)
+                for (int i = 1; i < 3; i++)
                 {
                     if (Random.value > 0.5f)
                     {
@@ -812,7 +867,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         // Search through each y block at x,z until we find the surface
         for (int i = 0; i < heightLimit; i++)
         {
-            if (blockTypes[positionToGet.x, i, positionToGet.y] == 0) // If it is air
+            if (blockTypes[positionToGet.x, i, positionToGet.y] == -1) // If it is air
             {
                 return i;
             }
@@ -820,6 +875,7 @@ public class PerlinNoiseGenerator : MonoBehaviour
         return heightLimit;
     }
 
+    // Draw all chunks in the toGeneratePosition list with a chunkSpawnRate offset between each one. This reduces lag rather than spawning all chunks at once.
     IEnumerator DelayBuildChunks()
     {
         while (toGeneratePosition.Count > 0)

@@ -9,11 +9,16 @@ public class MenuManager : MonoBehaviour
     public GameObject errorImage;
     public Text errorText;
 
-    public Text worldNameInputText;
-    public Text seedInputText;
+    public InputField worldNameInputText;
+    public InputField seedInputText;
 
     public Button generateWorldButton;
 
+    // Options menu stuff:
+    public Slider volumeSlider;
+    public Slider renderDistanceSlider;
+    public Slider sensitivitySlider;
+    public Text invertMouseButtonText;
 
     // Main Menu Stuff:
     public GameObject mainMenuCanvas;
@@ -23,15 +28,24 @@ public class MenuManager : MonoBehaviour
 
     // Other General Stuff:
     private GameManager gameManagerScript;
+    private AudioSource soundManagerAudioSource;
 
     // Start is called before the first frame update
     void Start()
     {
         gameManagerScript = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
+        soundManagerAudioSource = GameObject.FindGameObjectWithTag("SoundManager").GetComponent<AudioSource>();
 
-        if (gameManagerScript.previousSaveLoaded)
+        // Make sure the sliders and buttons in the Options menu are up-to-date, since they defult to their defult value when the scene is loaded
+        volumeSlider.value = soundManagerAudioSource.volume;
+        renderDistanceSlider.value = PerlinNoiseGenerator.renderDistance;
+        sensitivitySlider.value = MouseLook.mouseSensitivity;
+        ChangeInvertMouseText(MouseLook.invertMouse);
+
+        if (GameManager.storedDataPresent)
         {
             loadWorldButton.interactable = true;
+            loadWorldButton.gameObject.transform.GetChild(0).GetComponent<Text>().text = "Load Save: " + GameManager.storedWorldName;
         }
     }
 
@@ -88,7 +102,8 @@ public class MenuManager : MonoBehaviour
 
     public void GenerateWorldButtonPressed()
     {
-        if (!CheckWorldName(worldNameInputText.text)) // Usually this isn't needed as the WorldNameInputExited() function catches a bad name before this button is pressed, but this is here just in case.
+        string worldName = worldNameInputText.text;
+        if (!CheckWorldName(worldName)) // Usually this isn't needed as the WorldNameInputExited() function catches a bad name before this button is pressed, but this is here just in case.
         {
             return;
         }
@@ -116,9 +131,54 @@ public class MenuManager : MonoBehaviour
             seedFinal = Random.Range(-2147483647, 2147483647); // Generate a random number within the int32 range
         }
         print("The user has entered the seed [" + rawSeedInput + "] which has been converted to [" + seedFinal + "].");
-        gameManagerScript.seed = seedFinal;
+        GameManager.currentSeed = seedFinal;
+        GameManager.currentWorldName = worldName;
 
         gameManagerScript.ChangeScene(1); // Change to the game scene
 
     }
+
+    public void LoadPreviousWorld()
+    {
+        GameManager.loadPreviousSave = true;
+
+        GameManager.currentSeed = GameManager.storedSeed;
+        GameManager.currentWorldName = GameManager.storedWorldName;
+
+        gameManagerScript.ChangeScene(1); // Change to the game scene
+    }
+
+    // Hopefully they never feel the need to press this button
+    public void ExitGame()
+    {
+        print("Quitting game!");
+        Application.Quit();
+    }
+
+    // Called whenever the volume slider is changed
+    public void ChangeMusicVolume()
+    {
+        soundManagerAudioSource.volume = Mathf.Round(volumeSlider.value*100)/100;
+    }
+    public void ChangeRenderDistance()
+    {
+        PerlinNoiseGenerator.renderDistance = Mathf.FloorToInt(renderDistanceSlider.value);
+    }
+    public void ChangeSensitivity()
+    {
+        MouseLook.mouseSensitivity = sensitivitySlider.value;
+    }
+    public void InvertMouseButtonPressed()
+    {
+        bool newState = !MouseLook.invertMouse;
+        MouseLook.invertMouse = newState;
+
+        ChangeInvertMouseText(newState);
+    }
+    private void ChangeInvertMouseText(bool newState)
+    {
+        invertMouseButtonText.text = "Invert Mouse: " + (newState ? "ON" : "OFF");
+    }
+
+
 }
