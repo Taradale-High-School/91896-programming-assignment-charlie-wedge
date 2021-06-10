@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// Managers the menu buttons and loads / creates the game when those buttons are pressed
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;

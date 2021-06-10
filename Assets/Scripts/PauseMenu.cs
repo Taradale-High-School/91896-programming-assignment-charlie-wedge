@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// Pauses the game and saves the game when that button is pressed
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;

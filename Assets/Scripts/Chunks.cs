@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// This script can be found on every chunk. It keeps track of the blockTypes in that chunk
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

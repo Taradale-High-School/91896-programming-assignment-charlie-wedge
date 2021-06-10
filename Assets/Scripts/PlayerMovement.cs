@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// This script moves the player around
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

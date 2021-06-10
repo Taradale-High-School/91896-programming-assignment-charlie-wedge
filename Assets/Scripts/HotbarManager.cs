@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// Keeps track of the player's inventory and also allows the player to use the Hotbar. It also gives the player blocks and takes blocks away when they are placed/blocking
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;

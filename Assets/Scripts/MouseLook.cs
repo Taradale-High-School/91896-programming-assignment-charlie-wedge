@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// This script makes the camera rotate so the player can look around, and also sends raycasts to break and place blocks
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

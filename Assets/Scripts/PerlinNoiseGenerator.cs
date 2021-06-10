@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// This script generates the world and managers the game scene
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;

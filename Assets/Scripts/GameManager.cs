@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// Keeps track of the previous saved game, and also converts this to and from int[] and dictionaries
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
